@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mony_Loop.Domain\Mony_Loop.Domain.csproj" />
+    <ProjectReference Include="..\Mony_Loop.Domain\MonyLoop.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

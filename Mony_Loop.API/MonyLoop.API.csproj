@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mony_Loop.Application\Mony_Loop.Application.csproj" />
-    <ProjectReference Include="..\Mony_Loop.Infrastructure\Mony_Loop.Infrastructure.csproj" />
+    <ProjectReference Include="..\Mony_Loop.Application\MonyLoop.Application.csproj" />
+    <ProjectReference Include="..\Mony_Loop.Infrastructure\MonyLoop.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

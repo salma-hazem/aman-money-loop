@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Mony_Loop.API/MonyLoop.API.csproj" />
+  <Project Path="Mony_Loop.Application/MonyLoop.Application.csproj" />
+  <Project Path="Mony_Loop.Domain/MonyLoop.Domain.csproj" />
+  <Project Path="Mony_Loop.Infrastructure/MonyLoop.Infrastructure.csproj" />
+</Solution>
