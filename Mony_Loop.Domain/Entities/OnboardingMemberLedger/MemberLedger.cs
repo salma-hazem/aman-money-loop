@@ -1,5 +1,5 @@
 using Mony_Loop.Domain.Entities.Agreement___Payment;
-using Mony_Loop.Domain.Entities.Circle_Request___Configuration;
+using Mony_Loop.Domain.Entities.CircleRequestManagement;
 
 namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
 {

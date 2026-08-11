@@ -1,4 +1,4 @@
-﻿using Mony_Loop.Domain.Constants;
+using Mony_Loop.Domain.Constants;
 using Mony_Loop.Domain.Entities.Onboarding___Member_Ledger;
 using System;
 using System.Collections.Generic;
@@ -6,14 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
+namespace Mony_Loop.Domain.Entities.CircleRequestManagement
 {
     public class CircleSlot
     {
         //        Attribute Type
         //Id Guid
-        //CircleId Guid(FK → Circle)
-        //MemberLedgerId Guid? (FK → MemberLedger, nullable)
+        //CircleId Guid(FK ? Circle)
+        //MemberLedgerId Guid? (FK ? MemberLedger, nullable)
         //SlotNumber int
         //Status  SlotStatus(enum)
         //VacatedAt DateTime?

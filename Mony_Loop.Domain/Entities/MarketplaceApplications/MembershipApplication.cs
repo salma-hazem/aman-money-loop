@@ -1,6 +1,6 @@
 using Mony_Loop.Domain.Constants;
 using Mony_Loop.Domain.Entities.Agreement___Payment;
-using Mony_Loop.Domain.Entities.Circle_Request___Configuration;
+using Mony_Loop.Domain.Entities.CircleRequestManagement;
 using Mony_Loop.Domain.Entities.Verification;
 
 namespace Mony_Loop.Domain.Entities.Marketplace___Applications

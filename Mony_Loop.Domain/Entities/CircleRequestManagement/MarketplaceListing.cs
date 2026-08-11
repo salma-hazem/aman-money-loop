@@ -1,7 +1,7 @@
 using Mony_Loop.Domain.Constants;
 using Mony_Loop.Domain.Entities.Marketplace___Applications;
 
-namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
+namespace Mony_Loop.Domain.Entities.CircleRequestManagement
 {
     public class MarketplaceListing
     {
