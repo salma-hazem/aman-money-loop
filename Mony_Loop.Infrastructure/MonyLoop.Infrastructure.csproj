@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <Folder Include="DataSeeding\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <ItemGroup>
