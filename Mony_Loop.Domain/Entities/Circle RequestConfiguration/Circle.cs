@@ -12,7 +12,7 @@ namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
         public int FilledCount { get; set; }
         public decimal Amount { get; set; }
         public int Duration { get; set; }
-        public string Status { get; set; } = CircleStatus.Open;
+        public CircleStatus Status { get; set; } = CircleStatus.Open;
 
         public CircleRequest? CircleRequest { get; set; }
         public MarketplaceListing? MarketplaceListing { get; set; }

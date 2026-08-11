@@ -14,7 +14,7 @@ namespace Mony_Loop.Domain.Entities.Marketplace___Applications
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string NationalId { get; set; } = string.Empty;
-        public string Stage { get; set; } = MembershipApplicationStage.Submitted;
+        public MembershipApplicationStage Stage { get; set; } = MembershipApplicationStage.Submitted;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 

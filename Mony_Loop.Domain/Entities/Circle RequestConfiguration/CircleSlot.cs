@@ -23,7 +23,7 @@ namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
         public Guid CircleId { get; set; }
         public Guid? MemberLedgerId { get; set; }
         public int SlotNumber { get; set; }
-        public String Status { get; set; } = CircleSlotStatus.Vacant;
+        public CircleSlotStatus Status { get; set; } = CircleSlotStatus.Vacant;
         public DateTime? VacatedAt { get; set; }
         public DateTime? AssignedAt { get; set; }
 

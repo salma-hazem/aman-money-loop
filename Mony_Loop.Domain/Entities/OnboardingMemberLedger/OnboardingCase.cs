@@ -8,7 +8,7 @@ namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
         public Guid OnboardingCaseId { get; set; }
         public Guid MembershipAgreementId { get; set; }
         public Guid OrganizerId { get; set; }
-        public string FinalStatus { get; set; } = OnboardingCaseStatus.Pending;
+        public OnboardingCaseStatus FinalStatus { get; set; } = OnboardingCaseStatus.Pending;
         public DateTime CreatedAt { get; set; }
 
         public MembershipAgreement? MembershipAgreement { get; set; }

@@ -11,7 +11,7 @@ namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public long FileSize { get; set; }
-        public string Status { get; set; } = DocumentStatus.Pending;
+        public DocumentStatus Status { get; set; } = DocumentStatus.Pending;
         public string? RejectionReason { get; set; }
         public DateTime UploadedAt { get; set; }
         public DateTime? ReviewedAt { get; set; }

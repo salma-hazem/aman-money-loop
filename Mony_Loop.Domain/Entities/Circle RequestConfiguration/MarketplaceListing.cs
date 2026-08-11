@@ -7,7 +7,7 @@ namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
     {
         public Guid ListingId { get; set; }
         public Guid CircleId { get; set; }
-        public string ListingStatus { get; set; } = MarketplaceListingStatus.Active;
+        public MarketplaceListingStatus ListingStatus { get; set; } = MarketplaceListingStatus.Active;
 
         public Circle? Circle { get; set; }
         public ICollection<MembershipApplication> MembershipApplications { get; set; } = new List<MembershipApplication>();

@@ -10,13 +10,13 @@ namespace Mony_Loop.Domain.Entities.Agreement___Payment
         public Guid MemberLedgerId { get; set; }
         public Guid CircleId { get; set; }
         public Guid RecordedByUserId { get; set; }
-        public string TransactionType { get; set; } = PaymentTransactionTypes.PayIn;
-        public string PaymentMethod { get; set; } = PaymentMethods.EWallet;
-        public string TransactionStatus { get; set; } = PaymentTransactionStatus.Pending;
+        public PaymentTransactionType TransactionType { get; set; } = PaymentTransactionType.PayIn;
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.EWallet;
+        public PaymentTransactionStatus TransactionStatus { get; set; } = PaymentTransactionStatus.Pending;
         public decimal Amount { get; set; }
-        public string TransactionReference { get; set; } = string.Empty;
-        public string ReceiptNumber { get; set; } = string.Empty;
-        public string ReceiptFilePath { get; set; } = string.Empty;
+        public string? TransactionReference { get; set; }
+        public string? ReceiptNumber { get; set; }
+        public string? ReceiptFilePath { get; set; }
         public DateTime TransactionDate { get; set; }
         public DateTime CreatedAt { get; set; }
 
