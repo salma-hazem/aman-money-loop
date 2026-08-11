@@ -9,12 +9,12 @@ namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
         public Guid CreatedByOrganizerId { get; set; }
         public Guid? ReviewedByAdminId { get; set; }
         public string CircleTitle { get; set; } = string.Empty;
-        public string CircleType { get; set; } = CircleTypes.NewCircle;
+        public CircleType CircleType { get; set; } = CircleType.NewCircle;
         public decimal ContributionAmount { get; set; }
         public int Duration { get; set; }
         public int NumberOfSlots { get; set; }
         public string? ShortJustification { get; set; }
-        public string RequestStatus { get; set; } = CircleRequestStatus.Draft;
+        public CircleRequestStatus RequestStatus { get; set; } = CircleRequestStatus.Draft;
         public int? VacantSlotNumber { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? SubmittedAt { get; set; }

@@ -25,30 +25,33 @@ namespace Mony_Loop.Infrastructure.Data.Configurations.AgreementPayment
 
             builder.Property(x => x.TransactionType)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             builder.Property(x => x.PaymentMethod)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             builder.Property(x => x.TransactionStatus)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             builder.Property(x => x.Amount)
                 .IsRequired()
                 .HasPrecision(18, 2);
 
             builder.Property(x => x.TransactionReference)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(100);
 
             builder.Property(x => x.ReceiptNumber)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(100);
 
             builder.Property(x => x.ReceiptFilePath)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(500);
 
             builder.Property(x => x.TransactionDate)

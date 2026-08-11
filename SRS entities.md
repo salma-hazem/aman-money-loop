@@ -57,12 +57,12 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - CreatedByOrganizerId: Guid
 - ReviewedByAdminId: Guid?
 - CircleTitle: string
-- CircleType: string
+- CircleType: CircleType
 - ContributionAmount: decimal
 - Duration: int
 - NumberOfSlots: int
 - ShortJustification: string?
-- RequestStatus: string
+- RequestStatus: CircleRequestStatus
 - VacantSlotNumber: int?
 - CreatedAt: DateTime
 - SubmittedAt: DateTime?
@@ -77,13 +77,13 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - FilledCount: int
 - Amount: decimal
 - Duration: int
-- Status: string
+- Status: CircleStatus
 
 ### MarketplaceListing
 
 - ListingId: Guid
 - CircleId: Guid
-- ListingStatus: string
+- ListingStatus: MarketplaceListingStatus
 
 ### CircleSlot
 
@@ -91,7 +91,7 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - CircleId: Guid
 - MemberLedgerId: Guid?
 - SlotNumber: int
-- Status: string
+- Status: CircleSlotStatus
 - VacatedAt: DateTime?
 - AssignedAt: DateTime?
 
@@ -118,7 +118,7 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - Email: string
 - Phone: string
 - NationalId: string
-- Stage: string
+- Stage: MembershipApplicationStage
 - CreatedAt: DateTime
 - UpdatedAt: DateTime?
 
@@ -132,7 +132,7 @@ Note: UserId is nullable because guest users can apply. The target circle is rea
 - CircleId: Guid
 - ReviewedByUserId: Guid
 - RoundName: string
-- Format: string
+- Format: VerificationFormat
 
 ### VerificationSchedule
 
@@ -143,7 +143,7 @@ Note: UserId is nullable because guest users can apply. The target circle is rea
 - Time: TimeOnly
 - LocationLink: string?
 - VideoLink: string?
-- Status: string
+- Status: ScheduleStatus
 
 ### VerificationCriterion
 
@@ -183,7 +183,7 @@ Note: UserId is nullable because guest users can apply. The target circle is rea
 - PayoutSlot: int
 - StartDate: DateOnly
 - ExpiryDate: DateOnly
-- Status: string
+- Status: AgreementStatus
 - CreatedAt: DateTime
 - RespondedAt: DateTime?
 
@@ -193,11 +193,11 @@ Note: UserId is nullable because guest users can apply. The target circle is rea
 - MemberLedgerId: Guid
 - CircleId: Guid
 - RecordedByUserId: Guid
-- TransactionType: string
+- TransactionType: PaymentTransactionType
 - Amount: decimal
-- PaymentMethod: string
+- PaymentMethod: PaymentMethod
 - TransactionReference: string
-- TransactionStatus: string
+- TransactionStatus: PaymentTransactionStatus
 - ReceiptNumber: string
 - ReceiptFilePath: string
 - TransactionDate: DateTime
@@ -212,7 +212,7 @@ Payment transactions belong to the active MemberLedger, not directly to the agre
 - OnboardingCaseId: Guid
 - MembershipAgreementId: Guid
 - OrganizerId: Guid
-- FinalStatus: string
+- FinalStatus: OnboardingCaseStatus
 - CreatedAt: DateTime
 
 ### DocumentRequirement
@@ -234,7 +234,7 @@ Payment transactions belong to the active MemberLedger, not directly to the agre
 - FilePath: string
 - FileSize: long
 - UploadedAt: DateTime
-- Status: string
+- Status: DocumentStatus
 - ReviewedAt: DateTime?
 - RejectionReason: string?
 
@@ -247,6 +247,8 @@ Payment transactions belong to the active MemberLedger, not directly to the agre
 - ActivatedAt: DateTime
 
 ## MVP Status Values
+
+Implementation note: these values are represented as C# enums in Domain. EF Core should store them as strings in SQL Server during Phase 1 mapping.
 
 ### CircleType
 

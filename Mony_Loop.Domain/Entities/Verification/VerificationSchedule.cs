@@ -12,7 +12,7 @@ namespace Mony_Loop.Domain.Entities.Verification
         public TimeOnly Time { get; set; }
         public string? LocationLink { get; set; }
         public string? VideoLink { get; set; }
-        public string Status { get; set; } = ScheduleStatus.Pending;
+        public ScheduleStatus Status { get; set; } = ScheduleStatus.Pending;
 
         public MembershipApplication? MembershipApplication { get; set; }
         public VerificationRound? VerificationRound { get; set; }

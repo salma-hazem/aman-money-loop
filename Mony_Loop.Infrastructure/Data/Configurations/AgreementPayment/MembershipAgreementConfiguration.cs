@@ -43,7 +43,8 @@ namespace Mony_Loop.Infrastructure.Data.Configurations.AgreementPayment
 
             builder.Property(x => x.Status)
                 .IsRequired()
-                .HasMaxLength(20)
+                .HasConversion<string>()
+                .HasMaxLength(50)
                 .HasDefaultValue(AgreementStatus.Pending);
 
             builder.Property(x => x.CreatedAt)

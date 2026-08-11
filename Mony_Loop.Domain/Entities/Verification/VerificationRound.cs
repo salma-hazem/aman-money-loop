@@ -9,7 +9,7 @@ namespace Mony_Loop.Domain.Entities.Verification
         public Guid CircleId { get; set; }
         public Guid ReviewedByUserId { get; set; }
         public string RoundName { get; set; } = string.Empty;
-        public string Format { get; set; } = VerificationFormats.Video;
+        public VerificationFormat Format { get; set; } = VerificationFormat.Video;
 
         public Circle? Circle { get; set; }
         // public User? ReviewedByUser { get; set; }

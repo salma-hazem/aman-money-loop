@@ -14,7 +14,7 @@ namespace Mony_Loop.Domain.Entities.Agreement___Payment
         public int PayoutSlot { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly ExpiryDate { get; set; }
-        public string Status { get; set; } = AgreementStatus.Pending;
+        public AgreementStatus Status { get; set; } = AgreementStatus.Pending;
         public DateTime CreatedAt { get; set; }
         public DateTime? RespondedAt { get; set; }
 
