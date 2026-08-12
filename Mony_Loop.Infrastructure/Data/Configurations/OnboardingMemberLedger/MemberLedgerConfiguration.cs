@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
+namespace Mony_Loop.Infrastructure.Data.Configurations.OnboardingMemberLedger
 {
     public class MemberLedgerConfiguration : IEntityTypeConfiguration<MemberLedger>
     {
@@ -29,9 +29,26 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
 
             //  Relationships
 
-            builder.HasOne(x => x.CircleSlot)
+            builder.HasOne(x => x.OnboardingCase)
+                 .WithMany()
+                 .HasForeignKey(x => x.OnboardingCaseId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+
+            builder.HasOne(x => x.User)
                 .WithMany()
-                .HasForeignKey(x => x.MemberLedgerId);
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.ActivatedByAdmin)
+                .WithMany()
+                .HasForeignKey(x => x.ActivatedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.CircleSlot)
+                .WithOne(cs => cs.MemberLedger)
+                .HasForeignKey<MemberLedger>(x => x.CircleSlotId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasMany(x => x.PaymentTransactions)
                 .WithOne(x => x.MemberLedger)

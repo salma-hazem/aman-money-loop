@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+<<<<<<< HEAD
+=======
   <ItemGroup>
     <Folder Include="Interfaces\OnboardingMemberLedger\" />
   </ItemGroup>
@@ -18,4 +20,5 @@
     <Folder Include="Interfaces\" />
   </ItemGroup>
 
+>>>>>>> 4e8705a (module-1/UserAuth)
 </Project>

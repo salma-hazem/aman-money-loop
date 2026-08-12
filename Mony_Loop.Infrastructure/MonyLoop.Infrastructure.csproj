@@ -9,6 +9,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Mony_Loop.Infrastructure</RootNamespace>
+    <AssemblyName>Mony_Loop.Infrastructure</AssemblyName>
   </PropertyGroup>
 
 	<ItemGroup>
@@ -20,6 +22,11 @@
 	</ItemGroup>
   <ItemGroup>
     <Folder Include="DataSeeding\" />
+<<<<<<< HEAD
+=======
+    <Folder Include="Repositories\" />
+    <Folder Include="Repositories\OnboardingMemberLedger\" />
+>>>>>>> 4e8705a (module-1/UserAuth)
   </ItemGroup>
 
 	<ItemGroup>
@@ -28,6 +35,10 @@
 	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.29">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="StackExchange.Redis" Version="3.1.3" />
   </ItemGroup>
 

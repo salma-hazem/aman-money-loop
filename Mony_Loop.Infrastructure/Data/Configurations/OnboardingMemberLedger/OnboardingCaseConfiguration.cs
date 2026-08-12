@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
+namespace Mony_Loop.Infrastructure.Data.Configurations.OnboardingMemberLedger
 {
     public class OnboardingCaseConfiguration : IEntityTypeConfiguration<OnboardingCase>
     {
@@ -24,16 +24,23 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
                 .IsRequired();
 
             //  Relationships
-
             builder.HasOne(x => x.MembershipAgreement)
-                .WithMany()
-                .HasForeignKey(x => x.MembershipAgreementId)
+                .WithOne(x => x.OnboardingCase)
+                .HasForeignKey<OnboardingCase>(x => x.MembershipAgreementId)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.MemberLedger)
                 .WithOne(x => x.OnboardingCase)
                 .HasForeignKey<MemberLedger>(x => x.OnboardingCaseId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.Organizer)
+                .WithMany()
+                .HasForeignKey(x => x.OrganizerId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

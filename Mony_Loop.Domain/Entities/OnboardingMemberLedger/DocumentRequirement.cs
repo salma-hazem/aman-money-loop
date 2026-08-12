@@ -9,14 +9,7 @@ namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
     public class DocumentRequirement
     {
 
-        //        DocumentRequirement
-        //Attribute   Type
-        //Id  Guid
-        //DocumentName    string
-        //Description string?
-        //IsRequired  bool
-        //IsActive    bool
-        //DisplayOrder    int
+
         public Guid DocumentRequirementId { get; set; }
 
         public string DocumentName { get; set; } = string.Empty;
