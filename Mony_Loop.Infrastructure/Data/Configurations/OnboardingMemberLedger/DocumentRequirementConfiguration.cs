@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
+namespace Mony_Loop.Infrastructure.Data.Configurations.OnboardingMemberLedger
 {
     public class DocumentRequirementConfiguration : IEntityTypeConfiguration<DocumentRequirement>
     {
@@ -36,10 +36,10 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
                 .HasDefaultValue(0);
 
             // Relationships
+
             builder.HasMany(x => x.Documents)
                 .WithOne(x => x.DocumentRequirement)
                 .HasForeignKey(x => x.DocumentRequirementId)
-                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

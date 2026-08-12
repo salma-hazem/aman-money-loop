@@ -1,4 +1,5 @@
 using Mony_Loop.Domain.Constants.Onboarding___Member_Ledger;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
 {
@@ -15,9 +16,9 @@ namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
         public string? RejectionReason { get; set; }
         public DateTime UploadedAt { get; set; }
         public DateTime? ReviewedAt { get; set; }
-
+        //relations
         public OnboardingCase? OnboardingCase { get; set; }
         public DocumentRequirement? DocumentRequirement { get; set; }
-        // public User? ReviewedByUser { get; set; }
+        public ApplicationUser? ReviewedByUser { get; set; }
     }
 }

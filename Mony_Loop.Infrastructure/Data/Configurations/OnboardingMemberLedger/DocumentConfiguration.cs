@@ -7,13 +7,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
+namespace Mony_Loop.Infrastructure.Data.Configurations.OnboardingMemberLedger
 {
     public class DocumentConfiguration : IEntityTypeConfiguration<Document>
     {
         public void Configure(EntityTypeBuilder<Document> builder)
         {
             builder.HasKey(x => x.DocumentId);
+
+            builder.Property(x => x.FileName)
+                .IsRequired()
+                .HasMaxLength(255);
 
             builder.Property(x => x.FilePath)
                 .IsRequired()
@@ -36,12 +40,25 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
             // Relationships
 
             builder.HasOne(d => d.OnboardingCase)
-                .WithMany(oc => oc.Documents)
-                .HasForeignKey(d => d.OnboardingCaseId)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.OnboardingCaseId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(x => x.DocumentRequirement)
+                .WithMany()
+                .HasForeignKey(x => x.DocumentRequirementId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(x => x.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
+
+
 }
+    
+

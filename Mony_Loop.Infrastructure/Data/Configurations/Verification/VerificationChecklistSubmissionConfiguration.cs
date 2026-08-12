@@ -2,7 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Mony_Loop.Domain.Entities.Verification;
 
+<<<<<<< HEAD
 namespace MonyLoop.Infrastructure.Data.Configurations.Verification;
+=======
+namespace Mony_Loop.Infrastructure.Data.Configurations.Verification;
+>>>>>>> 4e8705a (module-1/UserAuth)
 
 public class VerificationChecklistSubmissionConfiguration : IEntityTypeConfiguration<VerificationChecklistSubmission>
 {
