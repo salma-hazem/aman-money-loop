@@ -1,5 +1,6 @@
 using Mony_Loop.Domain.Constants.Onboarding___Member_Ledger;
 using Mony_Loop.Domain.Entities.Agreement___Payment;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
 {
@@ -12,7 +13,7 @@ namespace Mony_Loop.Domain.Entities.Onboarding___Member_Ledger
         public DateTime CreatedAt { get; set; }
 
         public MembershipAgreement? MembershipAgreement { get; set; }
-        // public User? Organizer { get; set; }
+        public ApplicationUser? Organizer { get; set; }
         public ICollection<Document> Documents { get; set; } = new List<Document>();
         public MemberLedger? MemberLedger { get; set; }
     }

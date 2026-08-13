@@ -1,5 +1,10 @@
 
-namespace Mony_Loop.API
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Mony_Loop.Infrastructure.Data;
+using MonyLoop.Domain.Entities.UserAuth;
+
+namespace MonyLoop.API
 {
     public class Program
     {
@@ -14,6 +19,28 @@ namespace Mony_Loop.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+
+            builder.Services.AddDbContext<MonyLoopDbContext>
+                (options =>
+                {
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+                });
+
+            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.User.RequireUniqueEmail = true;
+            })
+                .AddEntityFrameworkStores<MonyLoopDbContext>()
+                .AddDefaultTokenProviders();
+
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -24,7 +51,7 @@ namespace Mony_Loop.API
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
