@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Mony_Loop.Application.DTOs.AgreementPayment.MembershipAgreement;
 using Mony_Loop.Application.ServicesAbstractions.AgreementPayment;
 
 namespace Mony_Loop.API.Controllers.AgreementPayment
@@ -17,9 +18,26 @@ namespace Mony_Loop.API.Controllers.AgreementPayment
 
         //organizer send agreement 
         [HttpPost]
-        public IActionResult CreateAgreement()
+        public async Task<IActionResult> CreateAgreement(
+            [FromBody] CreateMembershipAgreementRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var agreement =
+                    await _membershipAgreementService.CreateAgreementAsync(request);
+
+                return CreatedAtAction(
+                    nameof(GetAgreementById),
+                    new { id = agreement.MembershipAgreementId },
+                    agreement);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
         }
 
         //member view agreement 
@@ -37,16 +55,48 @@ namespace Mony_Loop.API.Controllers.AgreementPayment
 
         //member accept agreement 
         [HttpPost("{id:guid}/accept")]
-        public IActionResult AcceptAgreement(Guid id)
+        public async Task<IActionResult> AcceptAgreement(Guid id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var agreement =
+                    await _membershipAgreementService.AcceptAgreementAsync(id);
+
+                if (agreement is null)
+                    return NotFound();
+
+                return Ok(agreement);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
         }
 
         //member decline agreement 
         [HttpPost("{id:guid}/decline")]
-        public IActionResult DeclineAgreement(Guid id)
+        public async Task<IActionResult> DeclineAgreement(Guid id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var agreement =
+                    await _membershipAgreementService.DeclineAgreementAsync(id);
+
+                if (agreement is null)
+                    return NotFound();
+
+                return Ok(agreement);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
         }
     }
 }

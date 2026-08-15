@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
 using Mony_Loop.Application.DTOs.AgreementPayment.MembershipAgreement;
 using Mony_Loop.Application.ServicesAbstractions.AgreementPayment;
+using Mony_Loop.Domain.Constants.Agreement___Payment;
 using Mony_Loop.Domain.Interfaces.AgreementPayment;
-using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+
 
 namespace Mony_Loop.Application.Services.AgreementPayment
 {
@@ -36,14 +37,56 @@ namespace Mony_Loop.Application.Services.AgreementPayment
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(id);
+
+            if (agreement is null)
+                return null;
+
+            if (agreement.Status != AgreementStatus.Pending)
+            {
+                throw new InvalidOperationException(
+                    "Only pending agreements can be accepted.");
+            }
+
+            agreement.Status = AgreementStatus.Accepted;
+            agreement.RespondedAt = DateTime.UtcNow;
+
+            _membershipAgreementRepository.Update(agreement);
+
+            // TODO:
+            // SaveChangesAsync will be called through IUnitOfWork
+            // once the shared UnitOfWork implementation is merged.
+
+            return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(id);
+
+            if (agreement is null)
+                return null;
+
+            if (agreement.Status != AgreementStatus.Pending)
+            {
+                throw new InvalidOperationException(
+                    "Only pending agreements can be declined.");
+            }
+
+            agreement.Status = AgreementStatus.Declined;
+            agreement.RespondedAt = DateTime.UtcNow;
+
+            _membershipAgreementRepository.Update(agreement);
+
+            // TODO:
+            // await _unitOfWork.SaveChangesAsync();
+            // Add when the shared UnitOfWork implementation is merged.
+
+            return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
     }
 }
