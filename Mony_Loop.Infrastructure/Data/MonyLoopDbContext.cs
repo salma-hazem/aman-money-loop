@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Mony_Loop.Domain.Entities.Agreement___Payment;
 using Mony_Loop.Domain.Entities.CircleRequestManagement;
 using Mony_Loop.Domain.Entities.Marketplace___Applications;
 using Mony_Loop.Domain.Entities.Onboarding___Member_Ledger;
 using MonyLoop.Domain.Entities.UserAuth;
-using System.Reflection.Metadata;
-<<<<<<< HEAD
-using Mony_Loop.Domain.Entities.Marketplace___Applications;
-=======
 using System.Reflection;
 using Document = Mony_Loop.Domain.Entities.Onboarding___Member_Ledger.Document;
->>>>>>> 4e8705a (module-1/UserAuth)
 
 namespace Mony_Loop.Infrastructure.Data
 {
@@ -20,8 +16,8 @@ namespace Mony_Loop.Infrastructure.Data
     {
         public MonyLoopDbContext(DbContextOptions<MonyLoopDbContext> options) : base(options)
         {
-
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -44,18 +40,10 @@ namespace Mony_Loop.Infrastructure.Data
         public DbSet<CircleSlot> CircleSlots { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<MembershipApplication> MembershipApplications { get; set; }
-
         public DbSet<Document> Documents { get; set; }
         public DbSet<DocumentRequirement> DocumentRequirements { get; set; }
         public DbSet<MemberLedger> MemberLedgers { get; set; }
         public DbSet<OnboardingCase> OnboardingCases { get; set; }
-
         public DbSet<OTPToken> OTPTokens { get; set; }
-
-
-
-
-
-
     }
 }
