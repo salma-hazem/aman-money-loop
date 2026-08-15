@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Mony_Loop.Infrastructure.Data;
 using MonyLoop.Domain.Entities.UserAuth;
+using Mony_Loop.Application.Profiles.AgreementPayment;
+using Mony_Loop.Application.Services.AgreementPayment;
+using Mony_Loop.Application.ServicesAbstractions.AgreementPayment;
 
 namespace MonyLoop.API
 {
@@ -16,6 +19,10 @@ namespace MonyLoop.API
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddAutoMapper(typeof(AgreementPaymentProfile).Assembly);
+            builder.Services.AddScoped<
+                IMembershipAgreementService,
+                MembershipAgreementService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -40,7 +47,7 @@ namespace MonyLoop.API
                 .AddDefaultTokenProviders();
 
 
-
+            
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
