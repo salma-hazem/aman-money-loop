@@ -14,27 +14,24 @@ namespace Mony_Loop.Infrastructure.Repositories
     {
         private readonly MonyLoopDbContext _dbcontext;
 
-        private IOnboardingCaseRepository? _onboardingCases;
-        private IDocumentRequirementRepository? _documentRequirements;
-        private IDocumentRepository? _documents;
-        private IMemberLedgerRepository? _memberLedgers;
+        public IOnboardingCaseRepository OnboardingCases { get; }
+        public IDocumentRequirementRepository DocumentRequirements { get; }
+        public IDocumentRepository Documents { get; }
+        public IMemberLedgerRepository MemberLedgers { get; }
 
-        public UnitOfWork(MonyLoopDbContext dbcontext)
+        public UnitOfWork(
+            MonyLoopDbContext dbcontext,
+            IOnboardingCaseRepository onboardingCases,
+            IDocumentRequirementRepository documentRequirements,
+            IDocumentRepository documents,
+            IMemberLedgerRepository memberLedgers)
         {
             _dbcontext = dbcontext;
+            OnboardingCases = onboardingCases;
+            DocumentRequirements = documentRequirements;
+            Documents = documents;
+            MemberLedgers = memberLedgers;
         }
-
-        public IOnboardingCaseRepository OnboardingCases
-            => _onboardingCases ??= new OnboardingCaseRepository(_dbcontext);
-
-        public IDocumentRequirementRepository DocumentRequirements
-            => _documentRequirements ??= new DocumentRequirementRepository(_dbcontext);
-
-        public IDocumentRepository Documents
-            => _documents ??= new DocumentRepository(_dbcontext);
-
-        public IMemberLedgerRepository MemberLedgers
-            => _memberLedgers ??= new MemberLedgerRepository(_dbcontext);
 
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)
         {
