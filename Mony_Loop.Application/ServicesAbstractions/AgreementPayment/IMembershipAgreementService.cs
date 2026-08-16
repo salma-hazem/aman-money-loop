@@ -1,7 +1,7 @@
 ﻿using Mony_Loop.Application.DTOs.AgreementPayment.MembershipAgreement;
-using MonyLoop.Application.DTOs.AgreementPayment.MembershipAgreement;
 
-namespace MonyLoop.Application.ServicesAbstractions.AgreementPayment
+
+namespace Mony_Loop.Application.ServicesAbstractions.AgreementPayment
 {
     public interface IMembershipAgreementService
     {

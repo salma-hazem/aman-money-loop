@@ -2,7 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Mony_Loop.Domain.Entities.Verification;
 
-namespace Mony_Loop.Infrastructure.Data.Configurations.Verification;
+namespace MonyLoop.Infrastructure.Data.Configurations.Verification;
+
 
 public class VerificationCriterionRatingConfiguration : IEntityTypeConfiguration<VerificationCriterionRating>
 {
