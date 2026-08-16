@@ -10,10 +10,11 @@ using Mony_Loop.Domain.Interfaces.AgreementPayment;
 
 using Mony_Loop.Infrastructure.Data;
 using Mony_Loop.Infrastructure.Repositories.AgreementPayment;
+using Mony_Loop.Infrastructure.Repositories.CircleRequestManagement;
 
 using Mony_Loop.Infrastructure.Repositories;
 using MonyLoop.Domain.Entities.UserAuth;
-using MonyLoop.Domain.Interfaces;
+using Mony_Loop.Domain.Interfaces;
 
 namespace MonyLoop.API
 {
@@ -67,12 +68,9 @@ namespace MonyLoop.API
             .AddEntityFrameworkStores<MonyLoopDbContext>()
             .AddDefaultTokenProviders();
 
+            // Unit of Work and modules Repositories
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-
-
-
-
+            builder.Services.AddCircleRequestManagementRepositories();
 
             var app = builder.Build();
 

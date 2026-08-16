@@ -45,11 +45,6 @@ namespace Mony_Loop.Infrastructure.Data.Configurations.OnboardingMemberLedger
                 .HasForeignKey(x => x.ActivatedByAdminId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(x => x.CircleSlot)
-                .WithOne(cs => cs.MemberLedger)
-                .HasForeignKey<MemberLedger>(x => x.CircleSlotId)
-                .OnDelete(DeleteBehavior.SetNull);
-
             builder.HasMany(x => x.PaymentTransactions)
                 .WithOne(x => x.MemberLedger)
                 .HasForeignKey(x => x.MemberLedgerId)

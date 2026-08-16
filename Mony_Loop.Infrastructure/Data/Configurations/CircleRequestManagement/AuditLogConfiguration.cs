@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Mony_Loop.Domain.Entities.CircleRequestManagement;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace Mony_Loop.Infrastructure.Data.Configurations.CircleRequestManagement
 {
@@ -45,6 +46,11 @@ namespace Mony_Loop.Infrastructure.Data.Configurations.CircleRequestManagement
             builder.HasIndex(x => x.EntityId);
             builder.HasIndex(x => x.PerformedByUserId);
             builder.HasIndex(x => x.CreatedAt);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.PerformedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Mony_Loop.Domain.Constants;
 using Mony_Loop.Domain.Entities.CircleRequestManagement;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace Mony_Loop.Infrastructure.Data.Configurations.CircleRequestManagement
 {
@@ -71,6 +72,16 @@ namespace Mony_Loop.Infrastructure.Data.Configurations.CircleRequestManagement
             builder.HasIndex(x => x.CreatedByOrganizerId);
             builder.HasIndex(x => x.ReviewedByAdminId);
             builder.HasIndex(x => x.RequestStatus);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByOrganizerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ExistingCircleId is used only for replacement requests.
             builder.HasOne(x => x.ExistingCircle)
