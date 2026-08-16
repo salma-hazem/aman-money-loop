@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Mony_Loop.Infrastructure.Data;
+using Mony_Loop.Infrastructure.Repositories;
 using MonyLoop.Domain.Entities.UserAuth;
+using MonyLoop.Domain.Interfaces;
 
 namespace MonyLoop.API
 {
@@ -38,6 +40,11 @@ namespace MonyLoop.API
             })
                 .AddEntityFrameworkStores<MonyLoopDbContext>()
                 .AddDefaultTokenProviders();
+
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+
+
 
 
 
