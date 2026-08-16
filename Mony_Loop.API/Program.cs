@@ -11,7 +11,6 @@ using Mony_Loop.Infrastructure.Repositories.CircleRequestManagement;
 
 using Mony_Loop.Infrastructure.Repositories;
 using Mony_Loop.Infrastructure.Repositories.AgreementPayment;
-using Mony_Loop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.UserAuth;
 using Mony_Loop.Domain.Interfaces;
 
