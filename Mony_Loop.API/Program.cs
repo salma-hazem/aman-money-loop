@@ -1,18 +1,17 @@
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
 using Mony_Loop.Application.Profiles.AgreementPayment;
 using Mony_Loop.Application.Services.AgreementPayment;
 using Mony_Loop.Application.ServicesAbstractions.AgreementPayment;
-
 using Mony_Loop.Domain.Interfaces.AgreementPayment;
-
 using Mony_Loop.Infrastructure.Data;
 using Mony_Loop.Infrastructure.Repositories.AgreementPayment;
 using Mony_Loop.Infrastructure.Repositories.CircleRequestManagement;
 
 using Mony_Loop.Infrastructure.Repositories;
+using Mony_Loop.Infrastructure.Repositories.AgreementPayment;
+using Mony_Loop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.UserAuth;
 using Mony_Loop.Domain.Interfaces;
 
