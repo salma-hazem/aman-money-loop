@@ -10,8 +10,7 @@ using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.UserAuth;
-using MonyLoop.Domain.Interfaces;
-using MonyLoop.Domain.Interfaces.OnboardingMemberLedger;
+using Mony_Loop.Domain.Interfaces;
 
 namespace MonyLoop.API
 {
@@ -65,15 +64,9 @@ namespace MonyLoop.API
             .AddEntityFrameworkStores<MonyLoopDbContext>()
             .AddDefaultTokenProviders();
 
+            // Unit of Work and modules Repositories
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IOnboardingCaseRepository, OnboardingCaseRepository>();
-            builder.Services.AddScoped<IDocumentRequirementRepository, DocumentRequirementRepository>();
-            builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
-            builder.Services.AddScoped<IMemberLedgerRepository, MemberLedgerRepository>();
-
-
-
-
+            builder.Services.AddCircleRequestManagementRepositories();
 
             var app = builder.Build();
 

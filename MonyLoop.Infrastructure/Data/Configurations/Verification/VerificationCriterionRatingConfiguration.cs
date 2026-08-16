@@ -23,6 +23,18 @@ public class VerificationCriterionRatingConfiguration : IEntityTypeConfiguration
         builder.Property(r => r.Rating)
             .IsRequired();
 
+        builder.HasIndex(r => new
+            {
+                r.VerificationChecklistSubmissionId,
+                r.VerificationCriterionId
+            })
+            .IsUnique();
+
+        builder.ToTable(tableBuilder =>
+            tableBuilder.HasCheckConstraint(
+                "CK_VerificationCriterionRating_Rating",
+                "[Rating] BETWEEN 1 AND 5"));
+
         builder.Property(r => r.Comments)
             .HasMaxLength(1000)
             .IsRequired(false);

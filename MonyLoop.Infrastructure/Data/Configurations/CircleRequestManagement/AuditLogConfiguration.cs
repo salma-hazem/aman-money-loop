@@ -45,6 +45,11 @@ namespace MonyLoop.Infrastructure.Data.Configurations.CircleRequestManagement
             builder.HasIndex(x => x.EntityId);
             builder.HasIndex(x => x.PerformedByUserId);
             builder.HasIndex(x => x.CreatedAt);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.PerformedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

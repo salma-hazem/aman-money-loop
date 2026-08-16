@@ -72,6 +72,16 @@ namespace MonyLoop.Infrastructure.Data.Configurations.CircleRequestManagement
             builder.HasIndex(x => x.ReviewedByAdminId);
             builder.HasIndex(x => x.RequestStatus);
 
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByOrganizerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ExistingCircleId is used only for replacement requests.
             builder.HasOne(x => x.ExistingCircle)
                 .WithMany(x => x.ReplacementRequests)

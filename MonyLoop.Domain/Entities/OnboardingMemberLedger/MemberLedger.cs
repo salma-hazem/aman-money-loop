@@ -10,7 +10,6 @@ namespace MonyLoop.Domain.Entities.Onboarding___Member_Ledger
         public Guid UserId { get; set; }
         public Guid OnboardingCaseId { get; set; }
         public Guid ActivatedByAdminId { get; set; }
-        public Guid? CircleSlotId { get; set; }
         public DateTime ActivatedAt { get; set; }
 
         public OnboardingCase? OnboardingCase { get; set; }

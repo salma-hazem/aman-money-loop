@@ -19,8 +19,7 @@ namespace MonyLoop.Infrastructure.Repositories
         public IDocumentRepository Documents { get; }
         public IMemberLedgerRepository MemberLedgers { get; }
 
-        public UnitOfWork(
-            MonyLoopDbContext dbcontext,
+        public UnitOfWork(MonyLoopDbContext dbcontext,
             IOnboardingCaseRepository onboardingCases,
             IDocumentRequirementRepository documentRequirements,
             IDocumentRepository documents,

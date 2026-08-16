@@ -29,7 +29,7 @@ public class VerificationRoundConfiguration : IEntityTypeConfiguration<Verificat
         builder.HasOne(r => r.Circle)
             .WithMany(c => c.VerificationRounds)
             .HasForeignKey(r => r.CircleId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
     }
 }
