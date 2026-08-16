@@ -1,4 +1,4 @@
-namespace Mony_Loop.Domain.Interfaces;
+namespace MonyLoop.Domain.Interfaces;
 
 public interface IUnitOfWork
 {
