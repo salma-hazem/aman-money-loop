@@ -36,11 +36,18 @@ namespace MonyLoop.API
             builder.Services.AddScoped<
                 IMembershipAgreementService,
                 MembershipAgreementService>();
+            builder.Services.AddScoped<
+                IPaymentTransactionService,
+                PaymentTransactionService>();
+
 
             // Module 5 - Repositories
             builder.Services.AddScoped<
                 IMembershipAgreementRepository,
                 MembershipAgreementRepository>();
+            builder.Services.AddScoped<
+                IPaymentTransactionRepository,
+                PaymentTransactionRepository>();
 
             // Database
             builder.Services.AddDbContext<MonyLoopDbContext>(options =>
