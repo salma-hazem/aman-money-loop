@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MonyLoop.Domain.Constants.Agreement___Payment;
 using MonyLoop.Domain.Entities.Agreement___Payment;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Infrastructure.Data.Configurations.AgreementPayment
 {
@@ -70,6 +71,12 @@ namespace MonyLoop.Infrastructure.Data.Configurations.AgreementPayment
             builder.HasOne(x => x.Circle)
                 .WithMany(x => x.PaymentTransactions)
                 .HasForeignKey(x => x.CircleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ApplicationUser 1 ---- Many PaymentTransactions
+            builder.HasOne(x => x.RecordedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.RecordedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Mony_Loop.Application.DTOs.AgreementPayment.PaymentTransaction;
-using Mony_Loop.Application.ServicesAbstractions.AgreementPayment;
+using MonyLoop.Application.DTOs.AgreementPayment.PaymentTransaction;
+using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+
 
 namespace MonyLoop.API.Controllers.AgreementPayment
 {
@@ -39,6 +40,43 @@ namespace MonyLoop.API.Controllers.AgreementPayment
                     new { transactionId = transaction.PaymentTransactionId },
                     transaction);
             }
+
+        [HttpPost("pay-outs")]
+        public async Task<IActionResult> RecordPayOut(
+    [FromBody] RecordPayOutRequest request)
+        {
+            try
+            {
+                var transaction =
+                    await _paymentTransactionService.RecordPayOutAsync(request);
+
+                return CreatedAtAction(
+                    nameof(GetReceipt),
+                    new { transactionId = transaction.PaymentTransactionId },
+                    transaction);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
+        }
 
         [HttpGet("{transactionId:guid}/receipt")]
         public async Task<IActionResult> GetReceipt(Guid transactionId)
