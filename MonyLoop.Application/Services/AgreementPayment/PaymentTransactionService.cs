@@ -24,12 +24,12 @@ namespace MonyLoop.Application.Services.AgreementPayment
         IMemberLedgerRepository memberLedgerRepository,
         IUnitOfWork unitOfWork,
         IMapper mapper)
-        {
-            _paymentTransactionRepository = paymentTransactionRepository;
-            _memberLedgerRepository = memberLedgerRepository;
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-        }
+            {
+                _paymentTransactionRepository = paymentTransactionRepository;
+                _memberLedgerRepository = memberLedgerRepository;
+                _unitOfWork = unitOfWork;
+                _mapper = mapper;
+            }
 
         // GET PAYMENTS OVERVIEW
         public async Task<PaymentsOverviewResponse> GetPaymentsByMemberLedgerAsync(

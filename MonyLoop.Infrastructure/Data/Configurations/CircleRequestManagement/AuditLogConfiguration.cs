@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Infrastructure.Data.Configurations.CircleRequestManagement
 {
