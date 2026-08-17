@@ -1,6 +1,7 @@
 using MonyLoop.Domain.Constants.Agreement___Payment;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Entities.Onboarding___Member_Ledger;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Domain.Entities.Agreement___Payment
 {
@@ -22,6 +23,8 @@ namespace MonyLoop.Domain.Entities.Agreement___Payment
 
         public Circle? Circle { get; set; }
         public MemberLedger? MemberLedger { get; set; }
-        // public User? RecordedByUser { get; set; }
+
+        public ApplicationUser? RecordedByUser { get; set; }
+      
     }
 }
