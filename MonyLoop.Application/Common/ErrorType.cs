@@ -13,6 +13,6 @@ namespace MonyLoop.Application.Common
         NotFound = 2,
         Unauthorized = 3,
         Forbidden = 4,
-        InvalidCrendentials = 5
+        InvalidCredentials = 5
     }
 }

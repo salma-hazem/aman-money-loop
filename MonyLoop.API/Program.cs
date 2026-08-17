@@ -2,16 +2,19 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MonyLoop.Application.Profiles.AgreementPayment;
+using MonyLoop.Application.Profiles.OnboardingMemberLedger;
 using MonyLoop.Application.Services.AgreementPayment;
+using MonyLoop.Application.Services.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
+using MonyLoop.Domain.Entities.UserAuth;
+using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
 using MonyLoop.Infrastructure.Data;
 using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
-using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
-using MonyLoop.Domain.Entities.UserAuth;
-using MonyLoop.Domain.Interfaces;
 using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
+using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 
 namespace MonyLoop.API
 {
@@ -29,25 +32,21 @@ namespace MonyLoop.API
             builder.Services.AddSwaggerGen();
 
             // AutoMapper
-            builder.Services.AddAutoMapper(
-                typeof(AgreementPaymentProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(AgreementPaymentProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(OnboardingMemberLedgerProfile).Assembly);
 
             // Module 5 - Services
-            builder.Services.AddScoped<
-                IMembershipAgreementService,
-                MembershipAgreementService>();
-            builder.Services.AddScoped<
-                IPaymentTransactionService,
-                PaymentTransactionService>();
+            builder.Services.AddScoped<IMembershipAgreementService, MembershipAgreementService>();
+            builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
 
+            builder.Services.AddScoped<IDocumentService, DocumentService>();
+            builder.Services.AddScoped<IDocumentRequirementService, DocumentRequirementService>();
+            builder.Services.AddScoped<IOnboardingCaseService, OnboardingCaseService>();
+            builder.Services.AddScoped<IMemberLedgerService, MemberLedgerService>();
 
             // Module 5 - Repositories
-            builder.Services.AddScoped<
-                IMembershipAgreementRepository,
-                MembershipAgreementRepository>();
-            builder.Services.AddScoped<
-                IPaymentTransactionRepository,
-                PaymentTransactionRepository>();
+            builder.Services.AddScoped<IMembershipAgreementRepository, MembershipAgreementRepository>();
+            builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 
             // Database
             builder.Services.AddDbContext<MonyLoopDbContext>(options =>

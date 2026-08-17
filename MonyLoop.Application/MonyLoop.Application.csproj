@@ -13,10 +13,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Profiles\OnboardingMemberLedger\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\MonyLoop.Domain\MonyLoop.Domain.csproj" />
 	</ItemGroup>
 

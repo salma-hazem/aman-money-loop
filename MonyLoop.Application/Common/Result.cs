@@ -10,7 +10,7 @@ namespace MonyLoop.Application.Common
     {
         protected readonly List<Error> _errors = [];
         public bool IsSuccess => _errors.Count == 0;
-        public bool Failure => !IsSuccess;
+        public bool IsFailure => !IsSuccess;
 
         public IReadOnlyList<Error> Errors => _errors;
 
@@ -67,8 +67,6 @@ namespace MonyLoop.Application.Common
         public static new Result<TValue> Fail(Error error)
             => new Result<TValue>(error);
 
-        // ممكن اشيل Result<TValue > 
-        // عادي عشان هو كدا كدا متعرف في عنولن الميثود 
         public static new Result<TValue> Fail(List<Error> errors)
             => new(errors);
 
@@ -80,7 +78,9 @@ namespace MonyLoop.Application.Common
             => Fail(error);
 
         public static implicit operator Result<TValue>(List<Error> errors)
-        => Fail(errors);
+            => Fail(errors);
+
+
 
     }
 }
