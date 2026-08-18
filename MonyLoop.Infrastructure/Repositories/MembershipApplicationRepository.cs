@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Mony_Loop.Domain.Entities.Marketplace___Applications;
-using Mony_Loop.Domain.Interfaces;
-using Mony_Loop.Infrastructure.Data;
+using MonyLoop.Domain.Entities.Marketplace___Applications;
+using MonyLoop.Domain.Interfaces;
+using MonyLoop.Infrastructure.Data;
 
-namespace Mony_Loop.Infrastructure.Repositories
+namespace MonyLoop.Infrastructure.Repositories
 {
     public class MembershipApplicationRepository : IMembershipApplicationRepository
     {

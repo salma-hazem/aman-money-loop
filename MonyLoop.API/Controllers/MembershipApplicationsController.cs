@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Mony_Loop.Application.DTOs;
-using Mony_Loop.Application.ServicesAbstractions;
+using MonyLoop.Application.DTOs;
+using MonyLoop.Application.ServicesAbstractions;
 
-namespace Mony_Loop.API.Controllers
+namespace MonyLoop.API.Controllers
 {
     public class MembershipApplicationsController : ApiBaseController
     {

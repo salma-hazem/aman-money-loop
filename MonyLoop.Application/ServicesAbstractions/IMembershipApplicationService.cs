@@ -1,7 +1,7 @@
-﻿using Mony_Loop.Application.Common;
-using Mony_Loop.Application.DTOs;
+﻿using MonyLoop.Application.Common;
+using MonyLoop.Application.DTOs;
 
-namespace Mony_Loop.Application.ServicesAbstractions
+namespace MonyLoop.Application.ServicesAbstractions
 {
     public interface IMembershipApplicationService
     {
