@@ -17,6 +17,8 @@ using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Application.Services;
+using MonyLoop.Infrastructure;
+using QuestPDF.Infrastructure;
 
 namespace MonyLoop.API
 {
@@ -25,6 +27,8 @@ namespace MonyLoop.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            QuestPDF.Settings.License = LicenseType.Community;
 
             // Controllers
             builder.Services.AddControllers();
@@ -38,9 +42,19 @@ namespace MonyLoop.API
             builder.Services.AddAutoMapper(typeof(OnboardingMemberLedgerProfile).Assembly);
 
             // Module 5 - Services
-            builder.Services.AddScoped<IMembershipAgreementService, MembershipAgreementService>();
-            builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
-            //module 6 
+            builder.Services.AddScoped<
+                IMembershipAgreementService,
+                MembershipAgreementService>();
+
+            builder.Services.AddScoped<
+                IPaymentTransactionService,
+                PaymentTransactionService>();
+
+            builder.Services.AddScoped<
+                IPaymentReceiptPdfService,
+                PaymentReceiptPdfService>();
+
+            // Module 6
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IDocumentRequirementService, DocumentRequirementService>();
             builder.Services.AddScoped<IOnboardingCaseService, OnboardingCaseService>();

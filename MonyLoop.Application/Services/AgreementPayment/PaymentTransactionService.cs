@@ -33,11 +33,15 @@ namespace MonyLoop.Application.Services.AgreementPayment
 
         // GET PAYMENTS OVERVIEW
         public async Task<PaymentsOverviewResponse> GetPaymentsByMemberLedgerAsync(
-            Guid memberLedgerId)
+    Guid memberLedgerId)
         {
             var transactions =
                 await _paymentTransactionRepository
                     .GetByMemberLedgerIdAsync(memberLedgerId);
+
+            var memberLedger =
+                await _memberLedgerRepository
+                    .GetByIdWithSlotAsync(memberLedgerId);
 
             var successfulPayIns = transactions
                 .Where(x =>
@@ -56,11 +60,12 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 Transactions =
                     _mapper.Map<List<PaymentTransactionResponse>>(transactions),
 
+                PayoutSlot = memberLedger?.CircleSlot?.SlotNumber,
+
                 // TODO:
-                // These values require additional business/cross-module data.
+                // These values still require additional business/cross-module data.
                 NextContributionAmount = null,
                 NextContributionDueDate = null,
-                PayoutSlot = null,
                 PayoutStatus = null
             };
 
@@ -242,9 +247,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 transaction);
         }
 
-        // =========================================================
         // HELPERS
-        // =========================================================
 
         private static string GenerateReceiptNumber()
         {
