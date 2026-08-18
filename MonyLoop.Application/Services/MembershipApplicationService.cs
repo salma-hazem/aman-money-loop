@@ -1,11 +1,11 @@
-﻿using Mony_Loop.Application.Common;
-using Mony_Loop.Application.DTOs;
-using Mony_Loop.Application.ServicesAbstractions;
-using Mony_Loop.Domain.Constants;
-using Mony_Loop.Domain.Entities.Marketplace___Applications;
-using Mony_Loop.Domain.Interfaces;
+﻿using MonyLoop.Application.Common;
+using MonyLoop.Application.DTOs;
+using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Domain.Constants;
+using MonyLoop.Domain.Entities.Marketplace___Applications;
+using MonyLoop.Domain.Interfaces;
 
-namespace Mony_Loop.Application.Services
+namespace MonyLoop.Application.Services
 {
     public class MembershipApplicationService : IMembershipApplicationService
     {
@@ -34,7 +34,7 @@ namespace Mony_Loop.Application.Services
 
             await _repository.AddAsync(application);
 
-            return Result.Success(ToDetailDto(application));
+            return ToDetailDto(application);
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> GetByIdAsync(
@@ -43,10 +43,9 @@ namespace Mony_Loop.Application.Services
             var application = await _repository.GetByIdAsync(membershipApplicationId);
 
             if (application is null)
-                return Result.Failure<MembershipApplicationDetailDto>(
-                    Error.NotFound("MembershipApplication.NotFound", "Application not found."));
+                return Error.NotFound("MembershipApplication.NotFound", "Application not found.");
 
-            return Result.Success(ToDetailDto(application));
+            return ToDetailDto(application);
         }
 
         public async Task<Result<IReadOnlyList<MembershipApplicationSummaryDto>>> GetByListingIdAsync(
@@ -64,7 +63,7 @@ namespace Mony_Loop.Application.Services
                 })
                 .ToList();
 
-            return Result.Success<IReadOnlyList<MembershipApplicationSummaryDto>>(summaries);
+            return Result<IReadOnlyList<MembershipApplicationSummaryDto>>.Ok(summaries);
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> ShortlistAsync(
@@ -73,20 +72,18 @@ namespace Mony_Loop.Application.Services
             var application = await _repository.GetByIdAsync(membershipApplicationId);
 
             if (application is null)
-                return Result.Failure<MembershipApplicationDetailDto>(
-                    Error.NotFound("MembershipApplication.NotFound", "Application not found."));
+                return Error.NotFound("MembershipApplication.NotFound", "Application not found.");
 
             if (application.Stage != MembershipApplicationStage.Submitted)
-                return Result.Failure<MembershipApplicationDetailDto>(
-                    Error.Conflict("MembershipApplication.InvalidTransition",
-                        $"Cannot shortlist an application in stage '{application.Stage}'."));
+                return Error.Validation("MembershipApplication.InvalidTransition",
+                    $"Cannot shortlist an application in stage '{application.Stage}'.");
 
             application.Stage = MembershipApplicationStage.Shortlisted;
             application.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(application);
 
-            return Result.Success(ToDetailDto(application));
+            return ToDetailDto(application);
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> RejectAsync(
@@ -95,21 +92,19 @@ namespace Mony_Loop.Application.Services
             var application = await _repository.GetByIdAsync(membershipApplicationId);
 
             if (application is null)
-                return Result.Failure<MembershipApplicationDetailDto>(
-                    Error.NotFound("MembershipApplication.NotFound", "Application not found."));
+                return Error.NotFound("MembershipApplication.NotFound", "Application not found.");
 
             if (application.Stage == MembershipApplicationStage.Confirmed ||
                 application.Stage == MembershipApplicationStage.Rejected)
-                return Result.Failure<MembershipApplicationDetailDto>(
-                    Error.Conflict("MembershipApplication.InvalidTransition",
-                        $"Cannot reject an application in stage '{application.Stage}'."));
+                return Error.Validation("MembershipApplication.InvalidTransition",
+                    $"Cannot reject an application in stage '{application.Stage}'.");
 
             application.Stage = MembershipApplicationStage.Rejected;
             application.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(application);
 
-            return Result.Success(ToDetailDto(application));
+            return ToDetailDto(application);
         }
 
         private static MembershipApplicationDetailDto ToDetailDto(MembershipApplication a) =>

@@ -15,6 +15,8 @@ using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
 using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
+using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Application.Services;
 
 namespace MonyLoop.API
 {
@@ -47,6 +49,10 @@ namespace MonyLoop.API
             // Module 5 - Repositories
             builder.Services.AddScoped<IMembershipAgreementRepository, MembershipAgreementRepository>();
             builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+
+            // Module 3 - Services / Repositories
+            builder.Services.AddScoped<IMembershipApplicationRepository, MembershipApplicationRepository>();
+            builder.Services.AddScoped<IMembershipApplicationService, MembershipApplicationService>();
 
             // Database
             builder.Services.AddDbContext<MonyLoopDbContext>(options =>

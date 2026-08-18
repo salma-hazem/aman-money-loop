@@ -1,6 +1,6 @@
-﻿using Mony_Loop.Domain.Entities.Marketplace___Applications;
+﻿using MonyLoop.Domain.Entities.Marketplace___Applications;
 
-namespace Mony_Loop.Domain.Interfaces
+namespace MonyLoop.Domain.Interfaces
 {
     public interface IMembershipApplicationRepository
     {
