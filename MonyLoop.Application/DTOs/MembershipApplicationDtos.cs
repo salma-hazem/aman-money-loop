@@ -1,6 +1,6 @@
-﻿using Mony_Loop.Domain.Constants;
+﻿using MonyLoop.Domain.Constants;
 
-namespace Mony_Loop.Application.DTOs
+namespace MonyLoop.Application.DTOs
 {
     // Screen 9 - Circle Application Form (submit)
     public class CreateMembershipApplicationDto

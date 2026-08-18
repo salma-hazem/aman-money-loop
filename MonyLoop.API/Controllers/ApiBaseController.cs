@@ -3,7 +3,7 @@ using MonyLoop.Application.Common;
 
 namespace MonyLoop.API.Controllers
 {
-{
+
     [ApiController]
     [Route("api/[controller]")]
     public abstract class ApiBaseController : ControllerBase
@@ -13,13 +13,17 @@ namespace MonyLoop.API.Controllers
             if (result.IsSuccess)
                 return Ok(result.Value);
 
-            return result.Error!.Type switch
+            var error = result.Errors.First();
+
+            return error.Type switch
             {
-                ErrorType.NotFound => NotFound(new { result.Error.Code, result.Error.Message }),
-                ErrorType.Validation => BadRequest(new { result.Error.Code, result.Error.Message }),
-                ErrorType.Conflict => Conflict(new { result.Error.Code, result.Error.Message }),
-                ErrorType.Unauthorized => Unauthorized(new { result.Error.Code, result.Error.Message }),
-                _ => BadRequest(new { result.Error.Code, result.Error.Message })
+                ErrorType.NotFound => NotFound(error),
+                ErrorType.Validation => BadRequest(error),
+                ErrorType.Unauthorized => Unauthorized(error),
+                ErrorType.Forbidden => Forbid(),
+                ErrorType.InvalidCredentials => BadRequest(error),
+                ErrorType.Failure => StatusCode(StatusCodes.Status500InternalServerError, error),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, error)
             };
         }
     }
