@@ -45,11 +45,8 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
         public async Task<Result<OnboardingCaseResponseDto>> GetByIdAsync(Guid onboardingCaseId, CancellationToken ct = default)
         {
             if (onboardingCaseId == Guid.Empty)
-            {
-                return Result<OnboardingCaseResponseDto>.Fail(
-                    Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid.")
-                );
-            }
+                return Result<OnboardingCaseResponseDto>.Fail(Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid."));
+
 
             var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdAsync(onboardingCaseId, ct);
 
@@ -63,11 +60,8 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
         public async Task<Result<OnboardingCaseResponseDto>> GetByIdWithDocumentsAsync(Guid onboardingCaseId, CancellationToken ct = default)
         {
             if (onboardingCaseId == Guid.Empty)
-            {
-                return Result<OnboardingCaseResponseDto>.Fail(
-                    Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid.")
-                );
-            }
+                return Result<OnboardingCaseResponseDto>.Fail(Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid."));
+
 
             var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdWithDocumentsAsync(onboardingCaseId, ct);
             if (onboardingCase == null)
@@ -80,18 +74,14 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
         public async Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, CancellationToken ct = default)
         {
             if (organizerId == Guid.Empty)
-            {
-                return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(
-                    Error.Validation("Organizer.InvalidId", "The provided organizer ID is invalid.")
-                );
-            }
+                return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(Error.Validation("Organizer.InvalidId", "The provided organizer ID is invalid."));
+
 
             var onboardingCases = await _unitOfWork.OnboardingCases.GetByOrganizerIdAsync(organizerId, ct);
 
             if (onboardingCases == null)
-            {
                 return (Result<IEnumerable<OnboardingCaseResponseDto>>)Enumerable.Empty<OnboardingCaseResponseDto>();
-            }
+
 
             var responseDtos = _mapper.Map<IEnumerable<OnboardingCaseResponseDto>>(onboardingCases);
 
@@ -101,32 +91,46 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
         public async Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default)
         {
             if (!Enum.IsDefined(typeof(OnboardingCaseStatus), status))
-            {
-                return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(
-                    Error.Validation("OnboardingCase.InvalidStatus", "The provided onboarding status is invalid.")
-                );
-            }
+                return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(Error.Validation("OnboardingCase.InvalidStatus", "The provided onboarding status is invalid."));
+
 
             var onboardingCases = await _unitOfWork.OnboardingCases.GetByStatusAsync(status, ct);
 
             if (onboardingCases == null)
-            {
                 return (Result<IEnumerable<OnboardingCaseResponseDto>>)Enumerable.Empty<OnboardingCaseResponseDto>();
-            }
+
 
             var responseDtos = _mapper.Map<IEnumerable<OnboardingCaseResponseDto>>(onboardingCases);
 
             return (Result<IEnumerable<OnboardingCaseResponseDto>>)responseDtos;
         }
 
-        public async Task<Result> MarkDocumentsVerifiedAsync(Guid onboardingCaseId, CancellationToken ct = default)
+
+
+        public async Task<Result> MarkActivatedAsync(Guid onboardingCaseId, Guid activatedByAdminId, CancellationToken ct = default)
         {
             if (onboardingCaseId == Guid.Empty)
             {
-                return Result.Fail(
-                    Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid.")
-                );
+                return Result.Fail(Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid."));
             }
+
+            var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdAsync(onboardingCaseId, ct);
+
+            if (onboardingCase == null)
+                return Result.Fail(Error.NotFound("OnboardingCase.NotFound", $"The onboarding case with ID '{onboardingCaseId}' was not found."));
+
+            onboardingCase.FinalStatus = OnboardingCaseStatus.Approved;
+            _unitOfWork.OnboardingCases.Update(onboardingCase);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        public async Task<Result> MarkDocumentsVerifiedAsync(Guid onboardingCaseId, CancellationToken ct = default)
+        {
+            if (onboardingCaseId == Guid.Empty)
+                return Result.Fail(Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid."));
+
 
             var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdAsync(onboardingCaseId, ct);
 
@@ -135,6 +139,27 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             _unitOfWork.OnboardingCases.Update(onboardingCase);
             await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        public async Task<Result> RecalculateAndUpdateStatusAsync(Guid onboardingCaseId, CancellationToken ct = default)
+        {
+            if (onboardingCaseId == Guid.Empty)
+                return Result.Fail(Error.Validation("OnboardingCase.InvalidId", "The provided onboarding case ID is invalid."));
+
+            var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdAsync(onboardingCaseId, ct);
+            if (onboardingCase == null)
+                return Result.Fail(Error.NotFound("OnboardingCase.NotFound", $"The onboarding case with ID '{onboardingCaseId}' was not found."));
+
+            var allVerified = await _unitOfWork.Documents.AllRequiredDocumentsVerifiedAsync(onboardingCaseId, ct);
+
+            if (allVerified && onboardingCase.FinalStatus != OnboardingCaseStatus.Approved)
+            {
+                onboardingCase.FinalStatus = OnboardingCaseStatus.Approved;
+                _unitOfWork.OnboardingCases.Update(onboardingCase);
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
 
             return Result.Ok();
         }

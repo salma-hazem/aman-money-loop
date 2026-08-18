@@ -17,6 +17,8 @@ namespace MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger
         Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, CancellationToken ct = default);
         Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default);
         Task<Result> MarkDocumentsVerifiedAsync(Guid onboardingCaseId, CancellationToken ct = default);
+        Task<Result> RecalculateAndUpdateStatusAsync(Guid onboardingCaseId, CancellationToken ct = default);
+        Task<Result> MarkActivatedAsync(Guid onboardingCaseId, Guid activatedByAdminId, CancellationToken ct = default);
 
     }
 }

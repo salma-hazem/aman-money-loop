@@ -16,32 +16,36 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IOnboardingCaseService _onboardingCaseService;
 
-        public MemberLedgerService(IUnitOfWork unitOfWork, IMapper mapper)
+        public MemberLedgerService(IUnitOfWork unitOfWork, IMapper mapper, IOnboardingCaseService onboardingCaseService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _onboardingCaseService = onboardingCaseService;
         }
 
         public async Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, CancellationToken ct = default)
         {
             if (request == null)
-            {
-                return Result<MemberLedgerResponseDto>.Fail(
-                    Error.Validation("MemberLedger.NullRequest", "The member ledger request data cannot be null.")
-                );
-            }
+                return Result<MemberLedgerResponseDto>.Fail(Error.Validation("MemberLedger.NullRequest", "The member ledger request data cannot be null."));
+
 
             if (request.UserId == Guid.Empty)
-            {
-                return Result<MemberLedgerResponseDto>.Fail(
-                    Error.Validation("MemberLedger.InvalidUserId", "A valid User ID must be provided.")
-                );
-            }
+                return Result<MemberLedgerResponseDto>.Fail(Error.Validation("MemberLedger.InvalidUserId", "A valid User ID must be provided."));
+
+            var alreadyExists = await _unitOfWork.MemberLedgers.ExistsForUserAsync(request.UserId, ct);
+            if (alreadyExists)
+                return Result<MemberLedgerResponseDto>.Fail(Error.Failure("MemberLedger.AlreadyExists", "This user already has an active member ledger."));
 
             var memberLedger = _mapper.Map<MemberLedger>(request);
 
             await _unitOfWork.MemberLedgers.AddAsync(memberLedger, ct);
+
+            var updateStatusResult = await _onboardingCaseService.MarkActivatedAsync(request.OnboardingCaseId, ct);
+            if (updateStatusResult.IsFailure)
+                return Result<MemberLedgerResponseDto>.Fail(updateStatusResult.Errors.ToList());
+
             await _unitOfWork.SaveChangesAsync(ct);
 
             var responseDto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);

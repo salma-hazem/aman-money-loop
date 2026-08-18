@@ -38,7 +38,7 @@ namespace MonyLoop.API
             // Module 5 - Services
             builder.Services.AddScoped<IMembershipAgreementService, MembershipAgreementService>();
             builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
-
+            //module 6 
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IDocumentRequirementService, DocumentRequirementService>();
             builder.Services.AddScoped<IOnboardingCaseService, OnboardingCaseService>();
