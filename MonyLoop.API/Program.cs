@@ -1,23 +1,27 @@
 
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MonyLoop.Application.Profiles.AgreementPayment;
 using MonyLoop.Application.Profiles.OnboardingMemberLedger;
+using MonyLoop.Application.Services;
 using MonyLoop.Application.Services.AgreementPayment;
 using MonyLoop.Application.Services.OnboardingMemberLedger;
+using MonyLoop.Application.Services.UserAuth;
+using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
+using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
+using MonyLoop.Infrastructure;
 using MonyLoop.Infrastructure.Data;
 using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
 using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
-using MonyLoop.Application.ServicesAbstractions;
-using MonyLoop.Application.Services;
-using MonyLoop.Infrastructure;
+using MonyLoop.Infrastructure.Services.Email;
 using QuestPDF.Infrastructure;
 
 namespace MonyLoop.API
@@ -54,11 +58,18 @@ namespace MonyLoop.API
                 IPaymentReceiptPdfService,
                 PaymentReceiptPdfService>();
 
-            // Module 6
+            // Module 6 
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IDocumentRequirementService, DocumentRequirementService>();
             builder.Services.AddScoped<IOnboardingCaseService, OnboardingCaseService>();
             builder.Services.AddScoped<IMemberLedgerService, MemberLedgerService>();
+
+            //Module 1 
+            builder.Services.AddScoped<IOTPService, OTPService>();
+            builder.Services.AddScoped<IEmailTemplateRenderer, RazorLightEmailRenderer>();
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+
 
             // Module 5 - Repositories
             builder.Services.AddScoped<IMembershipAgreementRepository, MembershipAgreementRepository>();
@@ -74,6 +85,15 @@ namespace MonyLoop.API
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            //Hangfire
+            builder.Services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddHangfireServer();
+
 
             // Identity
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -107,6 +127,8 @@ namespace MonyLoop.API
             }
 
             app.UseHttpsRedirection();
+
+            app.UseHangfireDashboard("/hangfire");
 
             app.UseAuthentication();
             app.UseAuthorization();

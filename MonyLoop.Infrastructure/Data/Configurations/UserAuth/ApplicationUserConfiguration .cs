@@ -25,6 +25,9 @@ namespace MonyLoop.Infrastructure.Data.Configurations.UserAuth
                 .IsRequired()
                 .HasMaxLength(20);
 
+            builder.Property(x => x.ProfilePictureUrl)
+                .HasMaxLength(500);
+
             builder.Property(x => x.MustChangePassword)
                 .IsRequired()
                 .HasDefaultValue(false);

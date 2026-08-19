@@ -1,0 +1,38 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.WelcomeEmailModel
+
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "Welcome";
+}
+
+<h2>Welcome @Model.UserName,</h2>
+
+<p>
+    Your Aman Talent Hunt account has been created successfully.
+</p>
+
+<div class="info-box">
+
+    <p>
+        <strong>Email</strong><br />
+        @Model.To
+    </p>
+
+    <p>
+        <strong>Temporary Password</strong><br />
+        @Model.TemporaryPassword
+    </p>
+
+</div>
+
+<div class="button-container">
+
+    <a class="button" href="@Model.LoginUrl">
+        Login
+    </a>
+
+</div>
+
+<p class="warning">
+    Please change your password immediately after your first login.
+</p>
