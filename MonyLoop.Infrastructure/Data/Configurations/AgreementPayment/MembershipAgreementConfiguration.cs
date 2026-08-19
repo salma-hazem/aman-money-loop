@@ -47,6 +47,10 @@ namespace MonyLoop.Infrastructure.Data.Configurations.AgreementPayment
                 .HasMaxLength(50)
                 .HasDefaultValue(AgreementStatus.Pending);
 
+            builder.Property(x => x.ResponseTokenHash)
+                .IsRequired()
+                .HasMaxLength(64);
+
             builder.Property(x => x.CreatedAt)
                 .IsRequired();
 

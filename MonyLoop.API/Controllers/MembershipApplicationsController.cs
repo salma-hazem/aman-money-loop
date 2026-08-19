@@ -18,14 +18,14 @@ namespace MonyLoop.API.Controllers
             [FromBody] CreateMembershipApplicationDto dto)
         {
             var result = await _service.CreateApplicationAsync(dto);
-            return FromResult(result);
+            return HandleResult(result);
         }
 
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<MembershipApplicationDetailDto>> GetById(Guid id)
         {
             var result = await _service.GetByIdAsync(id);
-            return FromResult(result);
+            return HandleResult(result);
         }
 
         [HttpGet("by-listing/{listingId:guid}")]
@@ -33,21 +33,21 @@ namespace MonyLoop.API.Controllers
             Guid listingId)
         {
             var result = await _service.GetByListingIdAsync(listingId);
-            return FromResult(result);
+            return HandleResult(result);
         }
 
         [HttpPost("{id:guid}/shortlist")]
         public async Task<ActionResult<MembershipApplicationDetailDto>> Shortlist(Guid id)
         {
             var result = await _service.ShortlistAsync(id);
-            return FromResult(result);
+            return HandleResult(result);
         }
 
         [HttpPost("{id:guid}/reject")]
         public async Task<ActionResult<MembershipApplicationDetailDto>> Reject(Guid id)
         {
             var result = await _service.RejectAsync(id);
-            return FromResult(result);
+            return HandleResult(result);
         }
     }
 }

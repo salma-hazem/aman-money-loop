@@ -42,7 +42,13 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             await _unitOfWork.MemberLedgers.AddAsync(memberLedger, ct);
 
-            var updateStatusResult = await _onboardingCaseService.MarkActivatedAsync(request.OnboardingCaseId, activatedByAdminId, ct);
+
+            var updateStatusResult =
+                await _onboardingCaseService.MarkActivatedAsync(
+                    request.OnboardingCaseId,
+                    request.ActivatedByAdminId,
+                    ct); 
+
             if (updateStatusResult.IsFailure)
                 return Result<MemberLedgerResponseDto>.Fail(updateStatusResult.Errors.ToList());
 
