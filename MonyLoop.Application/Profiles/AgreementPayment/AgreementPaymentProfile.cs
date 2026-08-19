@@ -24,8 +24,14 @@ namespace MonyLoop.Application.Profiles.AgreementPayment
 
             CreateMap<PaymentTransaction, PaymentReceiptResponse>()
                 .ForMember(
+                    dest => dest.TransactionType,
+                    opt => opt.MapFrom(src => src.TransactionType.ToString()))
+                .ForMember(
                     dest => dest.PaymentMethod,
-                    opt => opt.MapFrom(src => src.PaymentMethod.ToString()));
+                    opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
+                .ForMember(
+                    dest => dest.TransactionStatus,
+                    opt => opt.MapFrom(src => src.TransactionStatus.ToString()));
         }
     }
 }

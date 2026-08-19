@@ -38,5 +38,17 @@ namespace MonyLoop.Infrastructure.Repositories
             _context.MembershipApplications.Update(application);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<MembershipApplication?> GetByIdWithAgreementDetailsAsync(
+    Guid membershipApplicationId)
+        {
+            return await _context.MembershipApplications
+                .Include(a => a.MarketplaceListing)
+                    .ThenInclude(l => l!.Circle)
+                        .ThenInclude(c => c!.CircleRequest)
+                .FirstOrDefaultAsync(
+                    a => a.MembershipApplicationId == membershipApplicationId);
+        }
+
     }
 }
