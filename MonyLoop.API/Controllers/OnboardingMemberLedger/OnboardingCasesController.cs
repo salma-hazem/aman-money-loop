@@ -30,7 +30,7 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
-        [HttpGet("{id:guid}/with-documents ")]
+        [HttpGet("{id:guid}/with-documents")]
         public async Task<ActionResult<OnboardingCaseResponseDto>> GetByIdWithDocuments(Guid id, CancellationToken ct)
         {
             var result = await _onboardingCaseService.GetByIdWithDocumentsAsync(id, ct);
