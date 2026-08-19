@@ -10,8 +10,10 @@ namespace MonyLoop.Application.ServicesAbstractions.AgreementPayment
 
         Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id);
 
-        Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id);
+        Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id,string token);
 
-        Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id);
+        Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id,string token);
+
+        Task<MembershipAgreementResponse?> GetAgreementForResponseAsync(Guid id, string token);
     }
 }

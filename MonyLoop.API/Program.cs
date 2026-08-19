@@ -23,6 +23,7 @@ using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Infrastructure.Services.Email;
 using QuestPDF.Infrastructure;
+using MonyLoop.Application.Settings;
 
 namespace MonyLoop.API
 {
@@ -33,6 +34,9 @@ namespace MonyLoop.API
             var builder = WebApplication.CreateBuilder(args);
 
             QuestPDF.Settings.License = LicenseType.Community;
+
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             // Controllers
             builder.Services.AddControllers();
