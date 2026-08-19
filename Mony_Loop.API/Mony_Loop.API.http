@@ -1,6 +1,0 @@
-@Mony_Loop.API_HostAddress = http://localhost:5249
-
-GET {{Mony_Loop.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
