@@ -1,35 +1,48 @@
 ﻿using AutoMapper;
 using MonyLoop.Application.DTOs.AgreementPayment.MembershipAgreement;
+using MonyLoop.Application.DTOs.OnboardingMemberLedger;
+using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Constants.Agreement___Payment;
 using MonyLoop.Domain.Entities.Agreement___Payment;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
+using System.Security.Cryptography;
+using System.Text;
+
 
 namespace MonyLoop.Application.Services.AgreementPayment
 {
     public class MembershipAgreementService : IMembershipAgreementService
     {
+        private readonly IMembershipApplicationRepository _membershipApplicationRepository;
         private readonly IMembershipAgreementRepository _membershipAgreementRepository;
+        private readonly IOnboardingCaseService _onboardingCaseService;
+        private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IMembershipApplicationRepository _membershipApplicationRepository;
+
 
         public MembershipAgreementService(
         IMembershipAgreementRepository membershipAgreementRepository,
         IMembershipApplicationRepository membershipApplicationRepository,
+        IOnboardingCaseService onboardingCaseService,
+        IEmailService emailService,
         IUnitOfWork unitOfWork,
         IMapper mapper)
         {
             _membershipAgreementRepository = membershipAgreementRepository;
             _membershipApplicationRepository = membershipApplicationRepository;
+            _onboardingCaseService = onboardingCaseService;
+            _emailService = emailService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<MembershipAgreementResponse> CreateAgreementAsync(
-    CreateMembershipAgreementRequest request)
+                 CreateMembershipAgreementRequest request)
         {
             var application =
                 await _membershipApplicationRepository
@@ -40,10 +53,8 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new KeyNotFoundException(
                     "Membership application was not found.");
             }
-            // For the current implementation,
-            // VerificationCompleted means Verification Completed + Selected. I'll make sure 
-            if (application.Stage !=
-                MembershipApplicationStage.VerificationCompleted)
+            //i assumed VerificationCompleted means Verification Completed + Selected 
+            if (application.Stage != MembershipApplicationStage.VerificationCompleted)
             {
                 throw new InvalidOperationException(
                     "An agreement can only be generated for a member who has completed verification and has been selected.");
@@ -88,6 +99,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "Circle request was not found for this circle.");
             }
+            var responseToken = GenerateResponseToken();
             var agreement = new MembershipAgreement
             {
                 MembershipAgreementId = Guid.NewGuid(),
@@ -100,13 +112,18 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 ExpiryDate = request.ExpiryDate,
                 Status = AgreementStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
+                ResponseTokenHash =HashResponseToken(responseToken),
                 RespondedAt = null
             };
             await _membershipAgreementRepository .AddAsync(agreement);
             application.Stage = MembershipApplicationStage.AgreementExtended;
             await _unitOfWork.SaveChangesAsync();
-            return _mapper.Map<MembershipAgreementResponse>(
-                agreement);
+            await _emailService.SendAgreementEmailAsync(
+            application.Email,
+            application.Name,
+            agreement.MembershipAgreementId,
+            responseToken);
+            return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
         public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id)
@@ -122,13 +139,18 @@ namespace MonyLoop.Application.Services.AgreementPayment
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync( Guid id, string token)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
 
             if (agreement is null)
                 return null;
+            if (!IsResponseTokenValid( token, agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
 
             var isExpired =
                 await MarkAsExpiredIfNeededAsync(agreement);
@@ -145,23 +167,71 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "Only pending agreements can be accepted.");
             }
 
+            // Get the related application and circle information
+            var application =
+                await _membershipApplicationRepository
+                    .GetByIdWithAgreementDetailsAsync(
+                        agreement.MembershipApplicationId);
+
+            if (application is null)
+            {
+                throw new InvalidOperationException(
+                    "The membership application related to this agreement was not found.");
+            }
+
+            var organizerId =
+                application.MarketplaceListing?
+                    .Circle?
+                    .CircleRequest?
+                    .CreatedByOrganizerId;
+
+            if (organizerId is null || organizerId == Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "The organizer for this agreement could not be determined.");
+            }
+
+            // Accept agreement
             agreement.Status = AgreementStatus.Accepted;
             agreement.RespondedAt = DateTime.UtcNow;
 
+            // Agreement Extended → Confirmed
+            application.Stage = MembershipApplicationStage.Confirmed;
             _membershipAgreementRepository.Update(agreement);
-
             await _unitOfWork.SaveChangesAsync();
+
+            // Trigger Module 6 onboarding
+            var onboardingRequest = new OnboardingCaseRequestDto
+            {
+                MembershipAgreementId = agreement.MembershipAgreementId,
+                OrganizerId = organizerId.Value
+            };
+
+            var onboardingResult =
+                await _onboardingCaseService.CreateAsync(onboardingRequest);
+
+            if (onboardingResult.IsFailure)
+            {
+                throw new InvalidOperationException(
+                    "The agreement was accepted, but the onboarding case could not be created.");
+            }
 
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id, string token)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
 
             if (agreement is null)
                 return null;
+
+            if (!IsResponseTokenValid( token,agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
 
             var isExpired =
                 await MarkAsExpiredIfNeededAsync(agreement);
@@ -178,14 +248,69 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "Only pending agreements can be declined.");
             }
 
+            var application =
+                await _membershipApplicationRepository
+                    .GetByIdWithAgreementDetailsAsync(
+                        agreement.MembershipApplicationId);
+
+            if (application is null)
+            {
+                throw new InvalidOperationException(
+                    "The membership application related to this agreement was not found.");
+            }
+
+            var circle =
+                application.MarketplaceListing?.Circle;
+
+            if (circle is null)
+            {
+                throw new InvalidOperationException(
+                    "The circle related to this agreement could not be found.");
+            }
+
+            // Decline the agreement
             agreement.Status = AgreementStatus.Declined;
             agreement.RespondedAt = DateTime.UtcNow;
 
             _membershipAgreementRepository.Update(agreement);
 
+            // Return the circle to recruitment
+            circle.Status = CircleStatus.InRecruitment;
+
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<MembershipAgreementResponse>(agreement);
+        }
+
+        public async Task<MembershipAgreementResponse?> GetAgreementForResponseAsync(
+        Guid id,
+        string token)
+        {
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(id);
+
+            if (agreement is null)
+                return null;
+
+            if (!IsResponseTokenValid(
+                token,
+                agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
+
+            var isExpired =
+                await MarkAsExpiredIfNeededAsync(agreement);
+
+            if (isExpired)
+            {
+                throw new InvalidOperationException(
+                    "This agreement has expired. Please contact Operations for assistance.");
+            }
+
+            return _mapper.Map<MembershipAgreementResponse>(
+                agreement);
         }
 
         private async Task<bool> MarkAsExpiredIfNeededAsync(
@@ -213,6 +338,43 @@ namespace MonyLoop.Application.Services.AgreementPayment
             await _unitOfWork.SaveChangesAsync();
 
             return true;
+        }
+        private static string GenerateResponseToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(32);
+
+            return Convert.ToHexString(bytes);
+        }
+
+        private static string HashResponseToken(string token)
+        {
+            var bytes = Encoding.UTF8.GetBytes(token);
+
+            var hash = SHA256.HashData(bytes);
+
+            return Convert.ToHexString(hash);
+        }
+
+        private static bool IsResponseTokenValid(
+            string token,
+            string storedTokenHash)
+        {
+            if (string.IsNullOrWhiteSpace(token) ||
+                string.IsNullOrWhiteSpace(storedTokenHash))
+            {
+                return false;
+            }
+
+            var providedHash =
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(token));
+
+            var storedHash =
+                Convert.FromHexString(storedTokenHash);
+
+            return CryptographicOperations.FixedTimeEquals(
+                providedHash,
+                storedHash);
         }
     }
 }

@@ -55,12 +55,12 @@ namespace MonyLoop.API.Controllers.AgreementPayment
 
         //member accept agreement 
         [HttpPost("{id:guid}/accept")]
-        public async Task<IActionResult> AcceptAgreement(Guid id)
+        public async Task<IActionResult> AcceptAgreement( Guid id, [FromQuery] string token)
         {
             try
             {
                 var agreement =
-                    await _membershipAgreementService.AcceptAgreementAsync(id);
+                    await _membershipAgreementService.AcceptAgreementAsync( id, token);
 
                 if (agreement is null)
                     return NotFound();
@@ -78,17 +78,63 @@ namespace MonyLoop.API.Controllers.AgreementPayment
 
         //member decline agreement 
         [HttpPost("{id:guid}/decline")]
-        public async Task<IActionResult> DeclineAgreement(Guid id)
+        public async Task<IActionResult> DeclineAgreement(  Guid id,  [FromQuery] string token)
         {
             try
             {
                 var agreement =
-                    await _membershipAgreementService.DeclineAgreementAsync(id);
+                    await _membershipAgreementService.DeclineAgreementAsync(id, token);
 
                 if (agreement is null)
                     return NotFound();
 
                 return Ok(agreement);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        //member view agreement for response with token
+        [HttpGet("{id:guid}/response")]
+        public async Task<IActionResult> GetAgreementForResponse( Guid id, [FromQuery] string token)
+        {
+            try
+            {
+                var agreement =
+                    await _membershipAgreementService
+                        .GetAgreementForResponseAsync(
+                            id,
+                            token);
+
+                if (agreement is null)
+                {
+                    return NotFound(new
+                    {
+                        message = "Membership agreement was not found."
+                    });
+                }
+
+                return Ok(agreement);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    message = ex.Message
+                });
             }
             catch (InvalidOperationException ex)
             {
