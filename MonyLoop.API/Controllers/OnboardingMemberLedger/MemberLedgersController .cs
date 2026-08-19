@@ -16,7 +16,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
         [HttpPost("activate")]
         public async Task<ActionResult<MemberLedgerResponseDto>> Activate([FromBody] MemberLedgerRequestDto request, CancellationToken ct)
         {
-            var result = await _memberLedgerService.ActivateAsync(request, ct);
+            var adminId = Guid.Parse(User.FindFirst("uid")?.Value ?? Guid.Empty.ToString()); // مؤقت لحد ما نخلص Auth/JWT
+            var result = await _memberLedgerService.ActivateAsync(request, adminId, ct);
             return HandleResult(result);
         }
 

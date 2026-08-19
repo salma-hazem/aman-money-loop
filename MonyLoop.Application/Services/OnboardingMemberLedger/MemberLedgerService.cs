@@ -25,7 +25,7 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             _onboardingCaseService = onboardingCaseService;
         }
 
-        public async Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, CancellationToken ct = default)
+        public async Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, Guid activatedByAdminId, CancellationToken ct = default)
         {
             if (request == null)
                 return Result<MemberLedgerResponseDto>.Fail(Error.Validation("MemberLedger.NullRequest", "The member ledger request data cannot be null."));
@@ -42,7 +42,7 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             await _unitOfWork.MemberLedgers.AddAsync(memberLedger, ct);
 
-            var updateStatusResult = await _onboardingCaseService.MarkActivatedAsync(request.OnboardingCaseId, ct);
+            var updateStatusResult = await _onboardingCaseService.MarkActivatedAsync(request.OnboardingCaseId, activatedByAdminId, ct);
             if (updateStatusResult.IsFailure)
                 return Result<MemberLedgerResponseDto>.Fail(updateStatusResult.Errors.ToList());
 

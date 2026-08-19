@@ -10,7 +10,7 @@ namespace MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger
 {
     public interface IMemberLedgerService
     {
-        Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, CancellationToken ct = default);
+        Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, Guid activatedByAdminId, CancellationToken ct = default);
         Task<Result<MemberLedgerResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     }
 }
