@@ -41,6 +41,17 @@ namespace MonyLoop.API
             // Controllers
             builder.Services.AddControllers();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AngularDev", policy =>
+                {
+                    policy
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             // Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -130,6 +141,7 @@ namespace MonyLoop.API
                 app.UseSwaggerUI();
             }
 
+            app.UseCors("AngularDev");
             app.UseHttpsRedirection();
 
             app.UseHangfireDashboard("/hangfire");
