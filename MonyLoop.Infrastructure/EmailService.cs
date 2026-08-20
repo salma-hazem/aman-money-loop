@@ -105,5 +105,49 @@ namespace MonyLoop.Infrastructure
 
             await client.DisconnectAsync(true, cancellationToken);
         }
+        public async Task SendMembershipApplicationStatusChangedEmailAsync(
+    string recipientEmail,
+    string memberName,
+    string newStage)
+        {
+            var message = new MimeMessage();
+            message.From.Add(
+                new MailboxAddress(
+                    _settings.SenderName,
+                    _settings.SenderEmail));
+            message.To.Add(
+                MailboxAddress.Parse(recipientEmail));
+            message.Subject = "Aman Money Loop - Application Status Update";
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = $"""
+        <html>
+        <body>
+            <p>Dear {System.Net.WebUtility.HtmlEncode(memberName)},</p>
+            <p>
+                The status of your membership application has been
+                updated to: <strong>{System.Net.WebUtility.HtmlEncode(newStage)}</strong>.
+            </p>
+            <p>
+                Aman Money Loop
+            </p>
+        </body>
+        </html>
+        """
+            };
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            await client.ConnectAsync(
+                _settings.SmtpServer,
+                _settings.Port,
+                SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(
+                _settings.Username,
+                _settings.Password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
     }
 }
