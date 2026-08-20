@@ -35,6 +35,16 @@ public sealed class CircleSlotRepository : ICircleSlotRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<CircleSlot?> GetByCircleAndSlotNumberAsync(
+        Guid circleId,
+        int slotNumber,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.CircleSlots.FirstOrDefaultAsync(
+            slot => slot.CircleId == circleId && slot.SlotNumber == slotNumber,
+            cancellationToken);
+    }
+
     public Task<CircleSlot?> GetVacantAsync(
         Guid circleId,
         int? slotNumber = null,

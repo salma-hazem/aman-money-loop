@@ -25,6 +25,19 @@ public sealed class MarketplaceListingRepository
             cancellationToken);
     }
 
+    public Task<MarketplaceListing?> GetDetailsByIdAsync(
+        Guid listingId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.MarketplaceListings
+            .AsNoTracking()
+            .Include(listing => listing.Circle)
+                .ThenInclude(circle => circle!.CircleRequest)
+            .FirstOrDefaultAsync(
+                listing => listing.ListingId == listingId,
+                cancellationToken);
+    }
+
     public Task<MarketplaceListing?> GetByCircleIdAsync(
         Guid circleId,
         CancellationToken cancellationToken = default)

@@ -28,18 +28,6 @@ namespace MonyLoop.Infrastructure
                 $"?agreementId={agreementId}" +
                 $"&token={Uri.EscapeDataString(responseToken)}";
 
-            var message = new MimeMessage();
-
-            message.From.Add(
-                new MailboxAddress(
-                    _settings.SenderName,
-                    _settings.SenderEmail));
-
-            message.To.Add(
-                MailboxAddress.Parse(recipientEmail));
-
-            message.Subject = "Aman Money Loop - Membership Agreement";
-
             var bodyBuilder = new BodyBuilder
             {
                 HtmlBody = $"""
@@ -77,22 +65,45 @@ namespace MonyLoop.Infrastructure
                 """
             };
 
-            message.Body = bodyBuilder.ToMessageBody();
+            await SendEmailAsync(
+                recipientEmail,
+                "Aman Money Loop - Membership Agreement",
+                bodyBuilder.HtmlBody);
+        }
+
+        public async Task SendEmailAsync(
+            string recipientEmail,
+            string subject,
+            string htmlBody,
+            CancellationToken cancellationToken = default)
+        {
+            var message = new MimeMessage();
+
+            message.From.Add(
+                new MailboxAddress(
+                    _settings.SenderName,
+                    _settings.SenderEmail));
+
+            message.To.Add(MailboxAddress.Parse(recipientEmail));
+            message.Subject = subject;
+            message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
             using var client = new SmtpClient();
 
             await client.ConnectAsync(
                 _settings.SmtpServer,
                 _settings.Port,
-                SecureSocketOptions.StartTls);
+                SecureSocketOptions.StartTls,
+                cancellationToken);
 
             await client.AuthenticateAsync(
                 _settings.Username,
-                _settings.Password);
+                _settings.Password,
+                cancellationToken);
 
-            await client.SendAsync(message);
+            await client.SendAsync(message, cancellationToken);
 
-            await client.DisconnectAsync(true);
+            await client.DisconnectAsync(true, cancellationToken);
         }
     }
 }

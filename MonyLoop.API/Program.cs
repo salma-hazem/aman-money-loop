@@ -24,6 +24,9 @@ using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Infrastructure.Services.Email;
 using QuestPDF.Infrastructure;
 using MonyLoop.Application.Settings;
+using MonyLoop.Application.Services.CircleRequestManagement;
+using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
+using MonyLoop.API.Swagger;
 
 namespace MonyLoop.API
 {
@@ -54,7 +57,8 @@ namespace MonyLoop.API
 
             // Swagger
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+                options.SchemaFilter<CircleRequestEnumSchemaFilter>());
 
             // AutoMapper
             builder.Services.AddAutoMapper(typeof(AgreementPaymentProfile).Assembly);
@@ -93,6 +97,18 @@ namespace MonyLoop.API
             // Module 3 - Services / Repositories
             builder.Services.AddScoped<IMembershipApplicationRepository, MembershipApplicationRepository>();
             builder.Services.AddScoped<IMembershipApplicationService, MembershipApplicationService>();
+
+            // Module 2 - Circle Request Management
+            builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddScoped<ICircleRequestService, CircleRequestService>();
+            builder.Services.AddScoped<ICircleRequestReviewService, CircleRequestReviewService>();
+            builder.Services.AddScoped<CircleRegistryService>();
+            builder.Services.AddScoped<ICircleRegistryService>(provider =>
+                provider.GetRequiredService<CircleRegistryService>());
+            builder.Services.AddScoped<ISlotAssignmentService>(provider =>
+                provider.GetRequiredService<CircleRegistryService>());
+            builder.Services.AddScoped<IListingAvailabilityService,
+                ListingAvailabilityService>();
 
             // Database
             builder.Services.AddDbContext<MonyLoopDbContext>(options =>

@@ -21,6 +21,15 @@ This file reflects the current Domain model plus the agreed corrections needed f
 - CircleSlot to MemberLedger: optional one-to-one while a slot is assigned.
 - User to AuditLog: one-to-many through AuditLog.PerformedByUserId.
 
+Lifecycle rules:
+
+- Approving a new-circle request creates exactly one Circle and its numbered CircleSlots; approving a replacement request creates neither.
+- Publishing creates or reactivates the Circle's one MarketplaceListing.
+- Only one active replacement request may target the same Circle and vacant slot number.
+- Assigning a MemberLedger fills one CircleSlot; vacating it removes that optional one-to-one link.
+- Filling the final slot completes the listing. Vacating a slot reopens the circle but does not automatically reactivate the listing.
+- Cancelling an original published request closes its Circle; cancelling the last published replacement returns the existing Circle to `Open` and never closes it.
+
 ## Module 3 - Circle Marketplace and Membership Applications
 
 - MarketplaceListing to MembershipApplication: one-to-many.

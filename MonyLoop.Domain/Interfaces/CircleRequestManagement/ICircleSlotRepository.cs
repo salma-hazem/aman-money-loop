@@ -12,6 +12,11 @@ public interface ICircleSlotRepository
         Guid circleId,
         CancellationToken cancellationToken = default);
 
+    Task<CircleSlot?> GetByCircleAndSlotNumberAsync(
+        Guid circleId,
+        int slotNumber,
+        CancellationToken cancellationToken = default);
+
     Task<CircleSlot?> GetVacantAsync(
         Guid circleId,
         int? slotNumber = null,

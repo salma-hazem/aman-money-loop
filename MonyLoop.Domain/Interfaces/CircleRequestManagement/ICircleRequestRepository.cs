@@ -21,6 +21,12 @@ public interface ICircleRequestRepository
         Guid existingCircleId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> HasActiveReplacementAsync(
+        Guid existingCircleId,
+        int vacantSlotNumber,
+        Guid? excludedRequestId = null,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsAsync(
         Guid requestId,
         CancellationToken cancellationToken = default);
