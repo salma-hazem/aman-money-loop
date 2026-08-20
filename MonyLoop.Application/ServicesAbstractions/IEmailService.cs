@@ -7,5 +7,10 @@
             string memberName,
             Guid agreementId,
             string responseToken);
+
+        Task SendMembershipApplicationStatusChangedEmailAsync(
+            string recipientEmail,
+            string memberName,
+            string newStage);
     }
 }
