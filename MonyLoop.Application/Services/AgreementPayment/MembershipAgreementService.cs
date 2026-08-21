@@ -2,6 +2,7 @@
 using MonyLoop.Application.DTOs.AgreementPayment.MembershipAgreement;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Constants;
@@ -10,6 +11,7 @@ using MonyLoop.Domain.Entities.Agreement___Payment;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
 using System.Text;
 
 
@@ -20,7 +22,8 @@ namespace MonyLoop.Application.Services.AgreementPayment
         private readonly IMembershipApplicationRepository _membershipApplicationRepository;
         private readonly IMembershipAgreementRepository _membershipAgreementRepository;
         private readonly IOnboardingCaseService _onboardingCaseService;
-        private readonly IEmailService _emailService;
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
@@ -29,14 +32,16 @@ namespace MonyLoop.Application.Services.AgreementPayment
         IMembershipAgreementRepository membershipAgreementRepository,
         IMembershipApplicationRepository membershipApplicationRepository,
         IOnboardingCaseService onboardingCaseService,
-        IEmailService emailService,
+        IEmailSender emailSender,
+        IConfiguration configuration,
         IUnitOfWork unitOfWork,
         IMapper mapper)
         {
             _membershipAgreementRepository = membershipAgreementRepository;
             _membershipApplicationRepository = membershipApplicationRepository;
             _onboardingCaseService = onboardingCaseService;
-            _emailService = emailService;
+            _emailSender = emailSender;
+            _configuration = configuration;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -118,11 +123,51 @@ namespace MonyLoop.Application.Services.AgreementPayment
             await _membershipAgreementRepository .AddAsync(agreement);
             application.Stage = MembershipApplicationStage.AgreementExtended;
             await _unitOfWork.SaveChangesAsync();
-            await _emailService.SendAgreementEmailAsync(
-            application.Email,
-            application.Name,
-            agreement.MembershipAgreementId,
-            responseToken);
+            var frontendBaseUrl =
+    _configuration["EmailSettings:FrontendBaseUrl"];
+
+            if (string.IsNullOrWhiteSpace(frontendBaseUrl))
+            {
+                throw new InvalidOperationException(
+                    "Frontend base URL is not configured.");
+            }
+
+            var responseUrl =
+                $"{frontendBaseUrl.TrimEnd('/')}/agreement-response" +
+                $"?agreementId={agreement.MembershipAgreementId}" +
+                $"&token={Uri.EscapeDataString(responseToken)}";
+
+            var emailBody = $"""
+            <p>Dear {application.Name},</p>
+
+            <p>
+                Your membership agreement for
+                <strong>{agreement.CircleTitle}</strong>
+                is ready for review.
+            </p>
+
+            <p>
+                Please use the link below to review and respond to your agreement:
+            </p>
+
+            <p>
+                <a href="{responseUrl}">
+                    Review Membership Agreement
+                </a>
+            </p>
+
+            <p>
+                This agreement expires on
+                <strong>{agreement.ExpiryDate:dd MMM yyyy}</strong>.
+            </p>
+
+            <p>Regards,<br/>MonyLoop Team</p>
+            """;
+
+                    await _emailSender.SendEmailAsync(
+                        application.Email,
+                        "Membership Agreement Ready for Review",
+                        emailBody);
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 

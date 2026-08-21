@@ -1,6 +1,7 @@
 ﻿using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs;
 using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.Marketplace___Applications;
 using MonyLoop.Domain.Interfaces;
@@ -10,14 +11,14 @@ namespace MonyLoop.Application.Services
     public class MembershipApplicationService : IMembershipApplicationService
     {
         private readonly IMembershipApplicationRepository _repository;
-        private readonly IEmailService _emailService;
+        private readonly IEmailSender _emailSender;
 
         public MembershipApplicationService(
-            IMembershipApplicationRepository repository,
-            IEmailService emailService)
+        IMembershipApplicationRepository repository,
+        IEmailSender emailSender)
         {
             _repository = repository;
-            _emailService = emailService;
+            _emailSender = emailSender;
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> CreateApplicationAsync(
@@ -87,10 +88,17 @@ namespace MonyLoop.Application.Services
 
             await _repository.UpdateAsync(application);
 
-            await _emailService.SendMembershipApplicationStatusChangedEmailAsync(
+            await _emailSender.SendEmailAsync(
                 application.Email,
-                application.Name,
-                application.Stage.ToString());
+                "Membership Application Status Update",
+                $"""
+                <p>Dear {application.Name},</p>
+                <p>
+                    Your membership application status has been updated to
+                    <strong>{application.Stage}</strong>.
+                </p>
+                <p>Regards,<br/>MonyLoop Team</p>
+                """);
 
             return ToDetailDto(application);
         }
@@ -113,10 +121,17 @@ namespace MonyLoop.Application.Services
 
             await _repository.UpdateAsync(application);
 
-            await _emailService.SendMembershipApplicationStatusChangedEmailAsync(
+            await _emailSender.SendEmailAsync(
                 application.Email,
-                application.Name,
-                application.Stage.ToString());
+                "Membership Application Status Update",
+                $"""
+                <p>Dear {application.Name},</p>
+                <p>
+                    Your membership application status has been updated to
+                    <strong>{application.Stage}</strong>.
+                </p>
+                <p>Regards,<br/>MonyLoop Team</p>
+                """);
 
             return ToDetailDto(application);
         }
