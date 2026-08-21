@@ -32,6 +32,10 @@ using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Domain.Interfaces.Verification;
 using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Infrastructure.DataSeeding;
+using MonyLoop.Application.Services.Verification;
+using MonyLoop.Application.ServicesAbstractions.Verification;
+using MonyLoop.Domain.Interfaces.Verification;
+using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
 using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
@@ -93,6 +97,15 @@ namespace MonyLoop.API
             builder.Services.AddScoped<
                 IPaymentReceiptPdfService,
                 PaymentReceiptPdfService>();
+
+            // Module 4 - Verification Management
+            builder.Services.AddScoped<IVerificationRoundRepository, VerificationRoundRepository>();
+            builder.Services.AddScoped<IVerificationScheduleRepository, VerificationScheduleRepository>();
+            builder.Services.AddScoped<IVerificationCriterionRepository, VerificationCriterionRepository>();
+            builder.Services.AddScoped<IVerificationCriterionRatingRepository, VerificationCriterionRatingRepository>();
+            builder.Services.AddScoped<IVerificationChecklistSubmissionRepository, VerificationChecklistSubmissionRepository>();
+
+            builder.Services.AddScoped<IVerificationService, VerificationService>();
 
             // Module 6 
             builder.Services.AddScoped<IDocumentService, DocumentService>();
