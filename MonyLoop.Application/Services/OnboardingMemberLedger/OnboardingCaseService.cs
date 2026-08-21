@@ -71,21 +71,50 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             return (Result<OnboardingCaseResponseDto>)responseDto;
         }
 
-        public async Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, CancellationToken ct = default)
+        public async Task<Result<PagedResult<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, int pageNumber, int pageSize, CancellationToken ct = default)
         {
             if (organizerId == Guid.Empty)
-                return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(Error.Validation("Organizer.InvalidId", "The provided organizer ID is invalid."));
+                return Result<PagedResult<OnboardingCaseResponseDto>>.Fail(Error.Validation("Organizer.InvalidId", "The provided organizer ID is invalid."));
 
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
 
-            var onboardingCases = await _unitOfWork.OnboardingCases.GetByOrganizerIdAsync(organizerId, ct);
+            var (items, totalCount) = await _unitOfWork.OnboardingCases.GetByOrganizerIdPagedAsync(organizerId, pageNumber, pageSize, ct);
 
-            if (onboardingCases == null)
-                return (Result<IEnumerable<OnboardingCaseResponseDto>>)Enumerable.Empty<OnboardingCaseResponseDto>();
+            var dtoItems = _mapper.Map<List<OnboardingCaseResponseDto>>(items);
 
+            var pagedResult = new PagedResult<OnboardingCaseResponseDto>
+            {
+                Items = dtoItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
 
-            var responseDtos = _mapper.Map<IEnumerable<OnboardingCaseResponseDto>>(onboardingCases);
+            return (Result<PagedResult<OnboardingCaseResponseDto>>)pagedResult;
+        }
 
-            return (Result<IEnumerable<OnboardingCaseResponseDto>>)responseDtos;
+        public async Task<Result<PagedResult<OnboardingCaseResponseDto>>> GetByStatusAsync(
+     OnboardingCaseStatus status, int pageNumber, int pageSize, CancellationToken ct = default)
+        {
+            if (!Enum.IsDefined(typeof(OnboardingCaseStatus), status))
+                return Result<PagedResult<OnboardingCaseResponseDto>>.Fail(Error.Validation("OnboardingCase.InvalidStatus", "The provided onboarding status is invalid."));
+
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var (items, totalCount) = await _unitOfWork.OnboardingCases.GetByStatusPagedAsync(status, pageNumber, pageSize, ct);
+            var dtoItems = _mapper.Map<List<OnboardingCaseResponseDto>>(items);
+
+            var pagedResult = new PagedResult<OnboardingCaseResponseDto>
+            {
+                Items = dtoItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return Result<PagedResult<OnboardingCaseResponseDto>>.Ok(pagedResult);
         }
 
         public async Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default)
@@ -93,12 +122,10 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             if (!Enum.IsDefined(typeof(OnboardingCaseStatus), status))
                 return Result<IEnumerable<OnboardingCaseResponseDto>>.Fail(Error.Validation("OnboardingCase.InvalidStatus", "The provided onboarding status is invalid."));
 
-
             var onboardingCases = await _unitOfWork.OnboardingCases.GetByStatusAsync(status, ct);
 
             if (onboardingCases == null)
                 return (Result<IEnumerable<OnboardingCaseResponseDto>>)Enumerable.Empty<OnboardingCaseResponseDto>();
-
 
             var responseDtos = _mapper.Map<IEnumerable<OnboardingCaseResponseDto>>(onboardingCases);
 

@@ -43,16 +43,25 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             return (Result<IEnumerable<DocumentResponseDto>>)responseDtos;
         }
 
-        public async Task<Result<IEnumerable<DocumentResponseDto>>> GetPendingReviewAsync(CancellationToken ct = default)
+
+
+        public async Task<Result<PagedResult<DocumentResponseDto>>> GetPendingReviewAsync(int pageNumber, int pageSize, CancellationToken ct = default)
         {
-            var documents = await _unitOfWork.Documents.GetPendingReviewAsync(ct);
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
 
-            if (documents == null)
-                return (Result<IEnumerable<DocumentResponseDto>>)Enumerable.Empty<DocumentResponseDto>();
+            var (items, totalCount) = await _unitOfWork.Documents.GetPendingReviewPagedAsync(pageNumber, pageSize, ct);
+            var dtoItems = _mapper.Map<List<DocumentResponseDto>>(items);
 
+            var pagedResult = new PagedResult<DocumentResponseDto>
+            {
+                Items = dtoItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
 
-            var responseDtos = _mapper.Map<IEnumerable<DocumentResponseDto>>(documents);
-            return (Result<IEnumerable<DocumentResponseDto>>)responseDtos;
+            return (Result<PagedResult<DocumentResponseDto>>)pagedResult;
         }
 
         public async Task<Result<DocumentResponseDto>> ReviewAsync(DocumentReviewRequestDto request, CancellationToken ct = default)
@@ -100,8 +109,8 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             var onboardingCase = await _unitOfWork.OnboardingCases.GetByIdAsync(request.OnboardingCaseId, ct);
             if (onboardingCase == null)
-               return Result<DocumentResponseDto>.Fail(Error.NotFound("OnboardingCase.NotFound", $"The onboarding case with ID '{request.OnboardingCaseId}' was not found."));
-            
+                return Result<DocumentResponseDto>.Fail(Error.NotFound("OnboardingCase.NotFound", $"The onboarding case with ID '{request.OnboardingCaseId}' was not found."));
+
 
             var document = _mapper.Map<Document>(request);
 

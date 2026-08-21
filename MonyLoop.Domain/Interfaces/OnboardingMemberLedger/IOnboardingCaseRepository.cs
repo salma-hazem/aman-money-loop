@@ -16,5 +16,10 @@ namespace MonyLoop.Domain.Interfaces.OnboardingMemberLedger
         Task<IEnumerable<OnboardingCase>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default);
         Task<bool> ExistsForAgreementAsync(Guid memberShipAgreementId, CancellationToken ct = default);
 
+        Task<(IReadOnlyList<OnboardingCase> Items, int TotalCount)> GetByOrganizerIdPagedAsync(
+            Guid organizerId, int pageNumber, int pageSize, CancellationToken ct = default);
+
+        Task<(IReadOnlyList<OnboardingCase> Items, int TotalCount)> GetByStatusPagedAsync(
+            OnboardingCaseStatus status, int pageNumber, int pageSize, CancellationToken ct = default);
     }
 }

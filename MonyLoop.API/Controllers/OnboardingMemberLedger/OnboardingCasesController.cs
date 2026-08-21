@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.Application.Common;
+using MonyLoop.Application.DTOs;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Constants.Onboarding___Member_Ledger;
@@ -49,21 +51,21 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
 
         [Authorize(Roles = ApplicationRole.Organizer)]
         [HttpGet("by-organizer/{organizerId:guid}")]
-        public async Task<ActionResult<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizer(Guid organizerId, CancellationToken ct)
+        public async Task<ActionResult<PagedResult<OnboardingCaseResponseDto>>> GetByOrganizer(Guid organizerId, [FromQuery] PaginationRequestDto pagination, CancellationToken ct)
         {
-            var result = await _onboardingCaseService.GetByOrganizerIdAsync(organizerId, ct);
+            var result = await _onboardingCaseService.GetByOrganizerIdAsync(organizerId, pagination.PageNumber, pagination.PageSize, ct);
             return HandleResult(result);
         }
+
 
 
         [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("by-status/{status}")]
-        public async Task<ActionResult<IEnumerable<OnboardingCaseResponseDto>>> GetByStatus(OnboardingCaseStatus status, CancellationToken ct)
+        public async Task<ActionResult<PagedResult<OnboardingCaseResponseDto>>> GetByStatus(OnboardingCaseStatus status, [FromQuery] PaginationRequestDto pagination, CancellationToken ct)
         {
-            var result = await _onboardingCaseService.GetByStatusAsync(status, ct);
+            var result = await _onboardingCaseService.GetByStatusAsync(status, pagination.PageNumber, pagination.PageSize, ct);
             return HandleResult(result);
         }
-
 
         [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpPatch("{id:guid}/mark-documents-verified")]

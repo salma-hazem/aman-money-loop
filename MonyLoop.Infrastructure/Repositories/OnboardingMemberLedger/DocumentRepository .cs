@@ -78,5 +78,24 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
 
 
         }
+
+        public async Task<(IEnumerable<Document> Items, int TotalCount)> GetPendingReviewPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+        {
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var query = _dbcontext.Documents
+                .AsNoTracking()
+                .Where(x => x.Status == DocumentStatus.Pending);
+
+            var totalCount = await query.CountAsync(ct);
+
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return (items, totalCount);
+        }
     }
 }

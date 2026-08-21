@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.Application.Common;
+using MonyLoop.Application.DTOs;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.UserAuth;
@@ -36,9 +38,9 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
 
         [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("pending-review")]
-        public async Task<ActionResult<IEnumerable<DocumentResponseDto>>> GetPendingReview(CancellationToken ct)
+        public async Task<ActionResult<PagedResult<DocumentResponseDto>>> GetPendingReview([FromQuery] PaginationRequestDto pagination, CancellationToken ct)
         {
-            var result = await _documentService.GetPendingReviewAsync(ct);
+            var result = await _documentService.GetPendingReviewAsync(pagination.PageNumber, pagination.PageSize, ct);
             return HandleResult(result);
         }
 

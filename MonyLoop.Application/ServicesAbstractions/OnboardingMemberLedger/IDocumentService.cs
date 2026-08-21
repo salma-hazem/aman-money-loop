@@ -12,7 +12,7 @@ namespace MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger
     {
         Task<Result<DocumentResponseDto>> UploadAsync(DocumentRequestDto request, CancellationToken ct = default);
         Task<Result<IEnumerable<DocumentResponseDto>>> GetByOnboardingCaseIdAsync(Guid onboardingCaseId, CancellationToken ct = default);
-        Task<Result<IEnumerable<DocumentResponseDto>>> GetPendingReviewAsync(CancellationToken ct = default);
+        Task<Result<PagedResult<DocumentResponseDto>>> GetPendingReviewAsync(int pageNumber, int pageSize, CancellationToken ct = default);
         Task<Result<DocumentResponseDto>> ReviewAsync(DocumentReviewRequestDto request, CancellationToken ct = default);
     }
 }
