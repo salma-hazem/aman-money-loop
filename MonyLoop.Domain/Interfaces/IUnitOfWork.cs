@@ -10,6 +10,7 @@ public interface IUnitOfWork
     IDocumentRepository Documents { get; }
     IMemberLedgerRepository MemberLedgers { get; }
     IOTPTokenRepository OTPTokens { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

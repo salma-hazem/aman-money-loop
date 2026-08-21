@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Constants.Onboarding___Member_Ledger;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.API.Controllers.OnboardingMemberLedger
 {
-
+    [Authorize]
     public class OnboardingCasesController : ApiBaseController
     {
         private readonly IOnboardingCaseService _onboardingCaseService;
@@ -16,6 +18,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             _onboardingCaseService = onboardingCaseService;
         }
 
+
+        [Authorize(Roles = ApplicationRole.Member)]
         [HttpPost]
         public async Task<ActionResult<OnboardingCaseResponseDto>> Create([FromBody] OnboardingCaseRequestDto request, CancellationToken ct)
         {
@@ -23,6 +27,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+
+        [Authorize(Roles = $"{ApplicationRole.Member},{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<OnboardingCaseResponseDto>> GetById(Guid id, CancellationToken ct)
         {
@@ -30,6 +36,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+
+        [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("{id:guid}/with-documents")]
         public async Task<ActionResult<OnboardingCaseResponseDto>> GetByIdWithDocuments(Guid id, CancellationToken ct)
         {
@@ -37,6 +45,9 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+
+
+        [Authorize(Roles = ApplicationRole.Organizer)]
         [HttpGet("by-organizer/{organizerId:guid}")]
         public async Task<ActionResult<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizer(Guid organizerId, CancellationToken ct)
         {
@@ -44,6 +55,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+
+        [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("by-status/{status}")]
         public async Task<ActionResult<IEnumerable<OnboardingCaseResponseDto>>> GetByStatus(OnboardingCaseStatus status, CancellationToken ct)
         {
@@ -51,6 +64,8 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+
+        [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpPatch("{id:guid}/mark-documents-verified")]
         public async Task<IActionResult> MarkDocumentsVerified(Guid id, CancellationToken ct)
         {

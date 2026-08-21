@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.API.Controllers.OnboardingMemberLedger
 {
+    [Authorize]
     public class MemberLedgersController : ApiBaseController
     {
         private readonly IMemberLedgerService _memberLedgerService;
@@ -13,14 +16,18 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             _memberLedgerService = memberLedgerService;
         }
 
+
+        [Authorize(Roles = ApplicationRole.Admin)]
         [HttpPost("activate")]
         public async Task<ActionResult<MemberLedgerResponseDto>> Activate([FromBody] MemberLedgerRequestDto request, CancellationToken ct)
         {
-            var adminId = Guid.Parse(User.FindFirst("uid")?.Value ?? Guid.Empty.ToString()); // مؤقت لحد ما نخلص Auth/JWT
+            var adminId = Guid.Parse(User.FindFirst("uid")?.Value ?? Guid.Empty.ToString());
             var result = await _memberLedgerService.ActivateAsync(request, adminId, ct);
             return HandleResult(result);
         }
 
+
+        [Authorize(Roles = $"{ApplicationRole.Member},{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("by-user/{userId:guid}")]
         public async Task<ActionResult<MemberLedgerResponseDto>> GetByUserId(Guid userId, CancellationToken ct)
         {

@@ -14,20 +14,21 @@ namespace MonyLoop.Infrastructure.Repositories
     public class UnitOfWork : IUnitOfWork
     {
         private readonly MonyLoopDbContext _dbcontext;
-        private readonly IOTPTokenRepository oTPToken;
 
         public IOnboardingCaseRepository OnboardingCases { get; }
         public IDocumentRequirementRepository DocumentRequirements { get; }
         public IDocumentRepository Documents { get; }
         public IMemberLedgerRepository MemberLedgers { get; }
         public IOTPTokenRepository OTPTokens { get; }
+        public IRefreshTokenRepository RefreshTokens { get; }
 
         public UnitOfWork(MonyLoopDbContext dbcontext,
             IOnboardingCaseRepository onboardingCases,
             IDocumentRequirementRepository documentRequirements,
             IDocumentRepository documents,
             IMemberLedgerRepository memberLedgers,
-            IOTPTokenRepository oTPToken)
+            IOTPTokenRepository oTPToken,
+            IRefreshTokenRepository refreshTokens)
         {
             _dbcontext = dbcontext;
             OnboardingCases = onboardingCases;
@@ -35,6 +36,7 @@ namespace MonyLoop.Infrastructure.Repositories
             Documents = documents;
             MemberLedgers = memberLedgers;
             OTPTokens = oTPToken;
+            RefreshTokens = refreshTokens;
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)

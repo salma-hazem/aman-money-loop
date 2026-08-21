@@ -9,11 +9,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Folder Include="DataSeeding\" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="MailKit" Version="4.17.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.29" />
 		<PackageReference Include="QuestPDF" Version="2026.7.3" />
 		<PackageReference Include="RazorLight" Version="2.3.1" />
 		<PackageReference Include="StackExchange.Redis" Version="3.1.3" />
@@ -34,4 +31,4 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-</Project>
+		</Project>

@@ -19,19 +19,31 @@ namespace MonyLoop.Application.Services.UserAuth
         private readonly IEmailSender _emailSender;
         private const int ExpiryMinutes = 10;
         private const int MaxAttempts = 5;
+        private readonly IRateLimiterService _rateLimiter;
 
 
-        public OTPService(IUnitOfWork unitOfWork, IEmailSender emailSender)
+        public OTPService(IUnitOfWork unitOfWork, IEmailSender emailSender, IRateLimiterService rateLimiter)
         {
             _unitOfWork = unitOfWork;
             _emailSender = emailSender;
+            _rateLimiter = rateLimiter;
         }
 
         public async Task<Result> GenerateAndSendAsync(Guid userId, string email, string userName, OTPPurpose purpose, CancellationToken ct)
         {
             await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
 
+
+            var rateLimitKey = $"otp-request:{userId}:{purpose}";
+            var isAllowed = await _rateLimiter.IsAllowedAsync(rateLimitKey, TimeSpan.FromSeconds(60));
+
+            if (!isAllowed)
+                return Result.Fail(Error.Validation("OTP.RateLimited", "يرجى الانتظار قبل طلب كود جديد."));
+
+            await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
+
             var code = new Random().Next(100000, 999999).ToString();
+
             var otp = new OTPToken()
             {
                 OTPTokenId = Guid.NewGuid(),
