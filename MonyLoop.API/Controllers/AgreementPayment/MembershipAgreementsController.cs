@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.AgreementPayment.MembershipAgreement;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+using Microsoft.AspNetCore.Authorization;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.API.Controllers.AgreementPayment
 {
@@ -17,14 +19,25 @@ namespace MonyLoop.API.Controllers.AgreementPayment
         }
 
         //organizer send agreement 
+        [Authorize(Roles = ApplicationRole.Organizer)]
         [HttpPost]
         public async Task<IActionResult> CreateAgreement(
             [FromBody] CreateMembershipAgreementRequest request)
         {
             try
             {
+                var userIdClaim = User.FindFirst("uid")?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var organizerId))
+                {
+                    return Unauthorized(new
+                    {
+                        message = "Authenticated organizer ID could not be determined."
+                    });
+                }
                 var agreement =
-                    await _membershipAgreementService.CreateAgreementAsync(request);
+                    await _membershipAgreementService.CreateAgreementAsync(request,
+        organizerId);
 
                 return CreatedAtAction(
                     nameof(GetAgreementById),
@@ -38,19 +51,70 @@ namespace MonyLoop.API.Controllers.AgreementPayment
                     message = ex.Message
                 });
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
         }
 
         //member view agreement 
+        [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetAgreementById(Guid id)
         {
-            var agreement =
-                await _membershipAgreementService.GetAgreementByIdAsync(id);
+            try
+            {
+                var userIdClaim =User.FindFirst("uid")?.Value;
+                if (!Guid.TryParse(userIdClaim,out var requesterId))
+                {
+                    return Unauthorized(new
+                    {
+                        message = "Authenticated user ID could not be determined."
+                    });
+                }
 
-            if (agreement is null)
-                return NotFound();
+                var isAdmin =User.IsInRole(ApplicationRole.Admin);
+                var agreement =await _membershipAgreementService
+                        .GetAgreementByIdAsync(
+                            id,
+                            requesterId,
+                            isAdmin);
 
-            return Ok(agreement);
+                if (agreement is null)
+                {
+                    return NotFound(new
+                    {
+                        message = "Membership agreement was not found."
+                    });
+                }
+
+                return Ok(agreement);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
         }
 
         //member accept agreement 

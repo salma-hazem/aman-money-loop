@@ -6,9 +6,9 @@ namespace MonyLoop.Application.ServicesAbstractions.AgreementPayment
     public interface IMembershipAgreementService
     {
         Task<MembershipAgreementResponse> CreateAgreementAsync(
-            CreateMembershipAgreementRequest request);
+            CreateMembershipAgreementRequest request,Guid organizerId);
 
-        Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id);
+        Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id,Guid requesterId,bool isAdmin);
 
         Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id,string token);
 

@@ -10,6 +10,10 @@ using MonyLoop.Domain.Constants.Agreement___Payment;
 using MonyLoop.Domain.Entities.Agreement___Payment;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
+using MonyLoop.Domain.Interfaces.CircleRequestManagement;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using MonyLoop.Domain.Entities.UserAuth;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using System.Text;
@@ -22,8 +26,11 @@ namespace MonyLoop.Application.Services.AgreementPayment
         private readonly IMembershipApplicationRepository _membershipApplicationRepository;
         private readonly IMembershipAgreementRepository _membershipAgreementRepository;
         private readonly IOnboardingCaseService _onboardingCaseService;
+        private readonly ICircleSlotRepository _circleSlotRepository;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _configuration;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<MembershipAgreementService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
@@ -32,6 +39,9 @@ namespace MonyLoop.Application.Services.AgreementPayment
         IMembershipAgreementRepository membershipAgreementRepository,
         IMembershipApplicationRepository membershipApplicationRepository,
         IOnboardingCaseService onboardingCaseService,
+        ICircleSlotRepository circleSlotRepository,
+        UserManager<ApplicationUser> userManager,
+        ILogger<MembershipAgreementService> logger,     
         IEmailSender emailSender,
         IConfiguration configuration,
         IUnitOfWork unitOfWork,
@@ -40,6 +50,9 @@ namespace MonyLoop.Application.Services.AgreementPayment
             _membershipAgreementRepository = membershipAgreementRepository;
             _membershipApplicationRepository = membershipApplicationRepository;
             _onboardingCaseService = onboardingCaseService;
+            _userManager = userManager;
+            _circleSlotRepository = circleSlotRepository;
+            _logger = logger;
             _emailSender = emailSender;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
@@ -47,7 +60,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
         }
 
         public async Task<MembershipAgreementResponse> CreateAgreementAsync(
-                 CreateMembershipAgreementRequest request)
+                 CreateMembershipAgreementRequest request,Guid organizerId)
         {
             var application =
                 await _membershipApplicationRepository
@@ -103,6 +116,29 @@ namespace MonyLoop.Application.Services.AgreementPayment
             {
                 throw new InvalidOperationException(
                     "Circle request was not found for this circle.");
+            }
+            if (circleRequest.CreatedByOrganizerId != organizerId)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorized to create an agreement for this membership application.");
+            }
+            if (request.PayoutSlot <= 0)
+            {
+                throw new ArgumentException(
+                    "Payout slot must be greater than zero.");
+            }
+
+            var payoutSlot =await _circleSlotRepository.GetByCircleAndSlotNumberAsync(circle.CircleId,request.PayoutSlot);
+
+            if (payoutSlot is null)
+            {
+                throw new ArgumentException( "The selected payout slot does not exist for this circle.");
+            }
+
+            if (payoutSlot.Status != CircleSlotStatus.Vacant ||
+                payoutSlot.MemberLedgerId is not null)
+            {
+                throw new InvalidOperationException("The selected payout slot is not available.");
             }
             var responseToken = GenerateResponseToken();
             var agreement = new MembershipAgreement
@@ -171,7 +207,8 @@ namespace MonyLoop.Application.Services.AgreementPayment
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id,Guid requesterId,
+    bool isAdmin)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
@@ -180,6 +217,40 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 return null;
 
             await MarkAsExpiredIfNeededAsync(agreement);
+
+            // Admin can access any agreement.
+            if (!isAdmin)
+            {
+                var application =
+                    await _membershipApplicationRepository
+                        .GetByIdWithAgreementDetailsAsync(
+                            agreement.MembershipApplicationId);
+
+                if (application is null)
+                {
+                    throw new InvalidOperationException(
+                        "The membership application related to this agreement was not found.");
+                }
+
+                var organizerId =
+                    application.MarketplaceListing?
+                        .Circle?
+                        .CircleRequest?
+                        .CreatedByOrganizerId;
+
+                if (organizerId is null ||
+                    organizerId == Guid.Empty)
+                {
+                    throw new InvalidOperationException(
+                        "The organizer for this agreement could not be determined.");
+                }
+
+                if (organizerId.Value != requesterId)
+                {
+                    throw new UnauthorizedAccessException(
+                        "You are not authorized to access this agreement.");
+                }
+            }
 
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
@@ -260,6 +331,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "The agreement was accepted, but the onboarding case could not be created.");
             }
+            await NotifyOrganizerAsync( organizerId.Value, agreement, "Accepted");
 
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
@@ -312,6 +384,14 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "The circle related to this agreement could not be found.");
             }
+            var organizerId =circle.CircleRequest?.CreatedByOrganizerId;
+
+            if (organizerId is null ||
+                organizerId == Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "The organizer for this agreement could not be determined.");
+            }
 
             // Decline the agreement
             agreement.Status = AgreementStatus.Declined;
@@ -323,7 +403,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             circle.Status = CircleStatus.InRecruitment;
 
             await _unitOfWork.SaveChangesAsync();
-
+            await NotifyOrganizerAsync( organizerId.Value, agreement, "Declined");
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
@@ -383,6 +463,62 @@ namespace MonyLoop.Application.Services.AgreementPayment
             await _unitOfWork.SaveChangesAsync();
 
             return true;
+        }
+
+        private async Task NotifyOrganizerAsync(Guid organizerId,MembershipAgreement agreement,string decision)
+        {
+            try
+            {
+                var organizer =
+                    await _userManager.FindByIdAsync(
+                        organizerId.ToString());
+
+                if (organizer is null ||
+                    string.IsNullOrWhiteSpace(organizer.Email))
+                {
+                    _logger.LogWarning(
+                        "Organizer email could not be found for agreement {AgreementId}.",
+                        agreement.MembershipAgreementId);
+
+                    return;
+                }
+
+                var subject =
+                    $"Membership Agreement {decision}";
+
+                var body = $"""
+            <p>Dear {organizer.FirstName},</p>
+
+            <p>
+                The membership agreement for
+                <strong>{agreement.MemberName}</strong>
+                in circle
+                <strong>{agreement.CircleTitle}</strong>
+                has been
+                <strong>{decision}</strong>.
+            </p>
+
+            <p>
+                Agreement ID:
+                {agreement.MembershipAgreementId}
+            </p>
+
+            <p>Regards,<br/>MonyLoop Team</p>
+            """;
+
+                await _emailSender.SendEmailAsync(
+                    organizer.Email,
+                    subject,
+                    body);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Failed to notify organizer {OrganizerId} for agreement {AgreementId}.",
+                    organizerId,
+                    agreement.MembershipAgreementId);
+            }
         }
         private static string GenerateResponseToken()
         {

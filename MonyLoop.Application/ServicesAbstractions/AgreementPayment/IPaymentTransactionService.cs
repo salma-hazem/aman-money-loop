@@ -6,14 +6,17 @@ namespace MonyLoop.Application.ServicesAbstractions.AgreementPayment
     public interface IPaymentTransactionService
     {
         Task<PaymentsOverviewResponse> GetPaymentsByMemberLedgerAsync(
-            Guid memberLedgerId);
+            Guid memberLedgerId,Guid requesterId,bool isAdmin);
 
         Task<PaymentTransactionResponse> RecordPayInAsync(
-            RecordPayInRequest request);
+            RecordPayInRequest request,
+            Guid recordedByUserId, bool isAdmin);
 
         Task<PaymentTransactionResponse> RecordPayOutAsync(
-           RecordPayOutRequest request);
+            RecordPayOutRequest request,
+            Guid recordedByUserId, bool isAdmin);
         Task<PaymentReceiptResponse?> GetReceiptAsync(
-            Guid transactionId);
+            Guid transactionId,Guid requesterId,
+    bool isAdmin);
     }
 }
