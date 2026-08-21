@@ -98,15 +98,6 @@ namespace MonyLoop.API
                 IPaymentReceiptPdfService,
                 PaymentReceiptPdfService>();
 
-            // Module 4 - Verification Management
-            builder.Services.AddScoped<IVerificationRoundRepository, VerificationRoundRepository>();
-            builder.Services.AddScoped<IVerificationScheduleRepository, VerificationScheduleRepository>();
-            builder.Services.AddScoped<IVerificationCriterionRepository, VerificationCriterionRepository>();
-            builder.Services.AddScoped<IVerificationCriterionRatingRepository, VerificationCriterionRatingRepository>();
-            builder.Services.AddScoped<IVerificationChecklistSubmissionRepository, VerificationChecklistSubmissionRepository>();
-
-            builder.Services.AddScoped<IVerificationService, VerificationService>();
-
             // Module 6 
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IDocumentRequirementService, DocumentRequirementService>();
