@@ -29,8 +29,6 @@ using MonyLoop.Infrastructure;
 using MonyLoop.Infrastructure.Data;
 using MonyLoop.Domain.Interfaces.Verification;
 using MonyLoop.Infrastructure.Repositories.Verification;
-using MonyLoop.Domain.Interfaces.Verification;
-using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Infrastructure.DataSeeding;
 using MonyLoop.Application.Services.Verification;
 using MonyLoop.Application.ServicesAbstractions.Verification;
