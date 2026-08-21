@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
@@ -12,16 +12,16 @@ namespace MonyLoop.Infrastructure.Notifications;
 public sealed class CircleRequestNotificationService : ICircleRequestNotificationService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IEmailService _emailService;
+    private readonly IEmailSender _emailSender;
     private readonly ILogger<CircleRequestNotificationService> _logger;
 
     public CircleRequestNotificationService(
         UserManager<ApplicationUser> userManager,
-        IEmailService emailService,
+        IEmailSender emailSender,
         ILogger<CircleRequestNotificationService> logger)
     {
         _userManager = userManager;
-        _emailService = emailService;
+        _emailSender = emailSender;
         _logger = logger;
     }
 
@@ -87,7 +87,7 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
     {
         try
         {
-            await _emailService.SendEmailAsync(recipient, subject, htmlBody, cancellationToken);
+            await _emailSender.SendEmailAsync(recipient, subject, htmlBody, cancellationToken);
         }
         catch (Exception exception)
         {
