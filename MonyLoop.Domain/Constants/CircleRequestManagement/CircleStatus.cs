@@ -4,6 +4,7 @@ namespace MonyLoop.Domain.Constants
     {
         Open,
         InRecruitment,
-        Filled
+        Filled,
+        Closed
     }
 }

@@ -1,0 +1,157 @@
+@{
+    var title = ViewBag.Title as string ?? "Aman Mony Loop";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #F0F6F9;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #002A47;
+        }
+
+        .wrapper {
+            width: 100%;
+        }
+
+        .container {
+            max-width: 620px;
+            margin: auto;
+            background: #FFFFFF;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,42,71,.08);
+        }
+
+        .header {
+            background: #00AEC7;
+            color: white;
+            text-align: center;
+            padding: 28px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 40px;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .content h2 {
+            margin-top: 0;
+            color: #002A47;
+        }
+
+        .otp {
+            margin: 32px auto;
+            padding: 18px;
+            background: #EAF6FA;
+            border: 2px dashed #00AEC7;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 34px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #00AEC7;
+        }
+
+        .info-box {
+            margin: 24px 0;
+            background: #F5FAFE;
+            border-left: 4px solid #00AEC7;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .info-box p {
+            margin: 10px 0;
+        }
+
+        .button-container {
+            margin: 35px 0;
+            text-align: center;
+        }
+
+        .button {
+            display: inline-block;
+            background: #00AEC7;
+            color: white !important;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .button:hover {
+            background: #0090A8;
+        }
+
+        .warning {
+            color: #DC6B2F;
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #F5FAFE;
+            border-top: 1px solid #DCF0F6;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: #1F5573;
+        }
+
+        .footer p {
+            margin: 4px 0;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <div class="container">
+
+        <div class="header">
+            <h1>Aman Mony Loop</h1>
+        </div>
+
+        <div class="content">
+            @RenderBody()
+        </div>
+
+        <div class="footer">
+
+            <p><strong>Aman Mony Loop</strong></p>
+
+            <p>
+                This is an automated email. Please do not reply to this message.
+            </p>
+
+            <p>
+                © @DateTime.UtcNow.Year Aman Holding
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

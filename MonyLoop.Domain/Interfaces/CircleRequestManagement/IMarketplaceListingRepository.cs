@@ -8,6 +8,10 @@ public interface IMarketplaceListingRepository
         Guid listingId,
         CancellationToken cancellationToken = default);
 
+    Task<MarketplaceListing?> GetDetailsByIdAsync(
+        Guid listingId,
+        CancellationToken cancellationToken = default);
+
     Task<MarketplaceListing?> GetByCircleIdAsync(
         Guid circleId,
         CancellationToken cancellationToken = default);

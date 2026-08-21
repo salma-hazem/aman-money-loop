@@ -15,6 +15,8 @@ namespace MonyLoop.Domain.Entities.Agreement___Payment
         public DateOnly StartDate { get; set; }
         public DateOnly ExpiryDate { get; set; }
         public AgreementStatus Status { get; set; } = AgreementStatus.Pending;
+
+        public string ResponseTokenHash { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? RespondedAt { get; set; }
 

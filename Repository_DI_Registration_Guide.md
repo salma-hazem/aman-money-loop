@@ -6,7 +6,7 @@ There is no base or generic repository requirement.
 
 ## 1. Shared Unit of Work
 
-The application has one shared `IUnitOfWork` in `Mony_Loop.Domain.Interfaces`.
+The application has one shared `IUnitOfWork` in `MonyLoop.Domain.Interfaces`.
 It contains only `SaveChangesAsync`. Its implementation is in Infrastructure
 and uses the shared `MonyLoopDbContext`.
 
@@ -27,9 +27,9 @@ module called `ExampleModule`:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
-using Mony_Loop.Domain.Interfaces.ExampleModule;
+using MonyLoop.Domain.Interfaces.ExampleModule;
 
-namespace Mony_Loop.Infrastructure.Repositories.ExampleModule;
+namespace MonyLoop.Infrastructure.Repositories.ExampleModule;
 
 public static class ExampleModuleServiceCollectionExtensions
 {
@@ -50,7 +50,7 @@ same database context for one HTTP request.
 Add the module namespace:
 
 ```csharp
-using Mony_Loop.Infrastructure.Repositories.ExampleModule;
+using MonyLoop.Infrastructure.Repositories.ExampleModule;
 ```
 
 Then register the module once during startup:

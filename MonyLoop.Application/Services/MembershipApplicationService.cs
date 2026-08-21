@@ -10,10 +10,14 @@ namespace MonyLoop.Application.Services
     public class MembershipApplicationService : IMembershipApplicationService
     {
         private readonly IMembershipApplicationRepository _repository;
+        private readonly IEmailService _emailService;
 
-        public MembershipApplicationService(IMembershipApplicationRepository repository)
+        public MembershipApplicationService(
+            IMembershipApplicationRepository repository,
+            IEmailService emailService)
         {
             _repository = repository;
+            _emailService = emailService;
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> CreateApplicationAsync(
@@ -83,6 +87,11 @@ namespace MonyLoop.Application.Services
 
             await _repository.UpdateAsync(application);
 
+            await _emailService.SendMembershipApplicationStatusChangedEmailAsync(
+                application.Email,
+                application.Name,
+                application.Stage.ToString());
+
             return ToDetailDto(application);
         }
 
@@ -103,6 +112,11 @@ namespace MonyLoop.Application.Services
             application.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(application);
+
+            await _emailService.SendMembershipApplicationStatusChangedEmailAsync(
+                application.Email,
+                application.Name,
+                application.Stage.ToString());
 
             return ToDetailDto(application);
         }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Interfaces.CircleRequestManagement;
 using MonyLoop.Infrastructure.Data;
@@ -12,6 +13,25 @@ public sealed class CircleRepository : ICircleRepository
     public CircleRepository(MonyLoopDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<IReadOnlyList<Circle>> GetAllAsync(
+        CircleStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Circle> query = _context.Circles
+            .AsNoTracking()
+            .Include(circle => circle.CircleRequest)
+            .Include(circle => circle.MarketplaceListing);
+
+        if (status.HasValue)
+        {
+            query = query.Where(circle => circle.Status == status.Value);
+        }
+
+        return await query
+            .OrderByDescending(circle => circle.CircleRequest!.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<Circle?> GetByIdAsync(

@@ -18,7 +18,7 @@ namespace MonyLoop.Infrastructure.Data.Configurations.UserAuth
 
             builder.Property(x => x.Code)
                 .IsRequired()
-                .HasMaxLength(10);
+                .HasMaxLength(6);
 
             builder.Property(x => x.Purpose)
                 .IsRequired()
@@ -32,6 +32,10 @@ namespace MonyLoop.Infrastructure.Data.Configurations.UserAuth
                 .IsRequired()
                 .HasDefaultValue(false);
 
+            builder.Property(x => x.AttemptsCount)
+                .IsRequired()
+                .HasDefaultValue(0);
+
             builder.Property(x => x.CreatedAt)
                 .IsRequired();
 
@@ -39,6 +43,8 @@ namespace MonyLoop.Infrastructure.Data.Configurations.UserAuth
                 .WithMany(u => u.OTPTokens)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(x => new { x.UserId, x.Purpose });
         }
     }
 }

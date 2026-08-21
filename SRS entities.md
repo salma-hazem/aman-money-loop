@@ -69,6 +69,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - ReviewedAt: DateTime?
 - DecisionReason: string?
 
+Lifecycle note: new requests store organizer-entered terms. Replacement requests store `ExistingCircleId` and `VacantSlotNumber`; their title, amount, duration, and one-slot count are derived from the existing circle. Requests are retained and cancelled rather than physically deleted.
+
 ### Circle
 
 - CircleId: Guid
@@ -78,6 +80,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - Amount: decimal
 - Duration: int
 - Status: CircleStatus
+
+Lifecycle note: approval creates the circle as `Open`; publication changes it to `InRecruitment`; filling its final slot changes it to `Filled`; cancellation of its original published request changes it to `Closed`.
 
 ### MarketplaceListing
 
@@ -94,6 +98,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - Status: CircleSlotStatus
 - VacatedAt: DateTime?
 - AssignedAt: DateTime?
+
+Lifecycle note: a new slot starts `Vacant`. Assignment sets `MemberLedgerId`, `Status = Assigned`, and `AssignedAt`. Vacancy clears `MemberLedgerId` and `AssignedAt`, sets `Status = Vacant`, and records `VacatedAt`. `Locked` is reserved but unused until the SRS defines it.
 
 ### AuditLog
 
@@ -262,14 +268,15 @@ Implementation note: these values are represented as C# enums in Domain. EF Core
 - ModificationRequested
 - Approved
 - Rejected
+- Published
 - Cancelled
-- Fulfilled
 
 ### CircleStatus
 
 - Open
 - InRecruitment
 - Filled
+- Closed
 
 ### MarketplaceListingStatus
 

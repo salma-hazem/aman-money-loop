@@ -7,7 +7,7 @@ namespace MonyLoop.Domain.Constants
         ModificationRequested,
         Approved,
         Rejected,
-        Cancelled,
-        Fulfilled
+        Published,
+        Cancelled
     }
 }
