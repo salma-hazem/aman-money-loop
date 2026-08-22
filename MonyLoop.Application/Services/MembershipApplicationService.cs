@@ -53,10 +53,11 @@ namespace MonyLoop.Application.Services
             return ToDetailDto(application);
         }
 
-        public async Task<Result<IReadOnlyList<MembershipApplicationSummaryDto>>> GetByListingIdAsync(
-            Guid listingId)
+        public async Task<Result<PagedResult<MembershipApplicationSummaryDto>>> GetByListingIdAsync(
+            Guid listingId, PaginationRequestDto pagination)
         {
-            var applications = await _repository.GetByListingIdAsync(listingId);
+            var (applications, totalCount) = await _repository.GetByListingIdAsync(
+                listingId, pagination.PageNumber, pagination.PageSize);
 
             var summaries = applications
                 .Select(a => new MembershipApplicationSummaryDto
@@ -68,7 +69,15 @@ namespace MonyLoop.Application.Services
                 })
                 .ToList();
 
-            return Result<IReadOnlyList<MembershipApplicationSummaryDto>>.Ok(summaries);
+            var pagedResult = new PagedResult<MembershipApplicationSummaryDto>
+            {
+                Items = summaries,
+                PageNumber = pagination.PageNumber,
+                PageSize = pagination.PageSize,
+                TotalCount = totalCount
+            };
+
+            return Result<PagedResult<MembershipApplicationSummaryDto>>.Ok(pagedResult);
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> ShortlistAsync(
