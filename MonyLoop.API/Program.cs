@@ -135,6 +135,17 @@ namespace MonyLoop.API
             builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
             builder.Services.AddScoped<IPaymentReceiptPdfService, PaymentReceiptPdfService>();
 
+            // ===== Module 4 - Verification =====
+            builder.Services.AddScoped<IVerificationRoundRepository, VerificationRoundRepository>();
+            builder.Services.AddScoped<IVerificationCriterionRepository, VerificationCriterionRepository>();
+            builder.Services.AddScoped<IVerificationScheduleRepository, VerificationScheduleRepository>();
+            builder.Services.AddScoped<IVerificationChecklistSubmissionRepository, VerificationChecklistSubmissionRepository>();
+            builder.Services.AddScoped<IVerificationCriterionRatingRepository, VerificationCriterionRatingRepository>();
+
+            builder.Services.AddScoped<IVerificationRoundService, VerificationRoundService>();
+            builder.Services.AddScoped<IVerificationScheduleService, VerificationScheduleService>();
+            builder.Services.AddScoped<IVerificationChecklistService, VerificationChecklistService>();
+
             // ===== Module 6 - Onboarding & Member Ledger =====
             builder.Services.AddScoped<IOnboardingCaseRepository, OnboardingCaseRepository>();
             builder.Services.AddScoped<IDocumentRequirementRepository, DocumentRequirementRepository>();
