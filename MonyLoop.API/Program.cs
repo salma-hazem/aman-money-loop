@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -15,28 +17,29 @@ using MonyLoop.Application.Services.AgreementPayment;
 using MonyLoop.Application.Services.CircleRequestManagement;
 using MonyLoop.Application.Services.OnboardingMemberLedger;
 using MonyLoop.Application.Services.UserAuth;
+using MonyLoop.Application.Services.Verification;
 using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
+using MonyLoop.Application.ServicesAbstractions.Verification;
+using MonyLoop.Application.Validators.UserAuth;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
 using MonyLoop.Domain.Interfaces.OnboardingMemberLedger;
 using MonyLoop.Domain.Interfaces.UserAuth;
+using MonyLoop.Domain.Interfaces.Verification;
 using MonyLoop.Infrastructure;
 using MonyLoop.Infrastructure.Data;
-using MonyLoop.Domain.Interfaces.Verification;
-using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Infrastructure.DataSeeding;
-using MonyLoop.Application.Services.Verification;
-using MonyLoop.Application.ServicesAbstractions.Verification;
 using MonyLoop.Infrastructure.Repositories;
 using MonyLoop.Infrastructure.Repositories.AgreementPayment;
 using MonyLoop.Infrastructure.Repositories.CircleRequestManagement;
 using MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger;
 using MonyLoop.Infrastructure.Repositories.UserAuth;
+using MonyLoop.Infrastructure.Repositories.Verification;
 using MonyLoop.Infrastructure.Services.Email;
 using MonyLoop.Infrastructure.Services.UserAuth;
 using QuestPDF.Infrastructure;
@@ -213,6 +216,12 @@ namespace MonyLoop.API
             ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("RedisConnection")!));
             builder.Services.AddScoped<IRateLimiterService, RedisRateLimiterService>();
 
+
+
+            //===== FluentValidation  =====
+
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddValidatorsFromAssembly(typeof(RegisterRequestValidator).Assembly);
 
 
             var app = builder.Build();
