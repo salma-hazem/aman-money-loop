@@ -160,7 +160,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             application.Stage = MembershipApplicationStage.AgreementExtended;
             await _unitOfWork.SaveChangesAsync();
             var frontendBaseUrl =
-    _configuration["EmailSettings:FrontendBaseUrl"];
+                _configuration["ApplicationUrls:FrontendBaseUrl"];
 
             if (string.IsNullOrWhiteSpace(frontendBaseUrl))
             {

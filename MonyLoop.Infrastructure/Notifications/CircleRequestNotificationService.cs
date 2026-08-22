@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
@@ -6,6 +5,8 @@ using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Entities.UserAuth;
+using MonyLoop.Infrastructure.Services.Email;
+using MonyLoop.Infrastructure.Services.Email.Models;
 
 namespace MonyLoop.Infrastructure.Notifications;
 
@@ -13,15 +14,18 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailSender _emailSender;
+    private readonly IEmailTemplateRenderer _renderer;
     private readonly ILogger<CircleRequestNotificationService> _logger;
 
     public CircleRequestNotificationService(
         UserManager<ApplicationUser> userManager,
         IEmailSender emailSender,
+        IEmailTemplateRenderer renderer,
         ILogger<CircleRequestNotificationService> logger)
     {
         _userManager = userManager;
         _emailSender = emailSender;
+        _renderer = renderer;
         _logger = logger;
     }
 
@@ -32,12 +36,28 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
         try
         {
             var admins = await _userManager.GetUsersInRoleAsync(SystemRoles.Admin);
+            if (admins.Count == 0)
+            {
+                _logger.LogWarning("No Admin recipients were found for circle request {RequestId}.", request.RequestId);
+                return;
+            }
+
             foreach (var admin in admins.Where(user => !string.IsNullOrWhiteSpace(user.Email)))
             {
-                await TrySendAsync(
+                var model = new CircleRequestSubmittedEmailModel
+                {
+                    RecipientName = GetDisplayName(admin, "Admin"),
+                    RequestId = request.RequestId,
+                    CircleTitle = request.CircleTitle,
+                    CircleType = request.CircleType.ToString(),
+                    SubmittedAt = request.SubmittedAt ?? request.CreatedAt
+                };
+
+                await TryRenderAndSendAsync(
+                    "CircleRequestSubmittedEmail",
+                    model,
                     admin.Email!,
                     "Circle request submitted",
-                    $"<p>Circle request <strong>{WebUtility.HtmlEncode(request.CircleTitle)}</strong> is ready for review.</p>",
                     request.RequestId,
                     cancellationToken);
             }
@@ -61,14 +81,21 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
                 return;
             }
 
-            var reason = string.IsNullOrWhiteSpace(request.DecisionReason)
-                ? string.Empty
-                : $"<p>Reason: {WebUtility.HtmlEncode(request.DecisionReason)}</p>";
+            var model = new CircleRequestDecisionEmailModel
+            {
+                OrganizerName = GetDisplayName(organizer, "Organizer"),
+                RequestId = request.RequestId,
+                CircleTitle = request.CircleTitle,
+                RequestStatus = request.RequestStatus.ToString(),
+                DecisionReason = request.DecisionReason,
+                ReviewedAt = request.ReviewedAt ?? request.SubmittedAt ?? request.CreatedAt
+            };
 
-            await TrySendAsync(
+            await TryRenderAndSendAsync(
+                "CircleRequestDecisionEmail",
+                model,
                 organizer.Email,
                 $"Circle request {request.RequestStatus}",
-                $"<p>Your request <strong>{WebUtility.HtmlEncode(request.CircleTitle)}</strong> is now <strong>{request.RequestStatus}</strong>.</p>{reason}",
                 request.RequestId,
                 cancellationToken);
         }
@@ -78,20 +105,28 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
         }
     }
 
-    private async Task TrySendAsync(
+    private async Task TryRenderAndSendAsync<TModel>(
+        string templateName,
+        TModel model,
         string recipient,
         string subject,
-        string htmlBody,
         Guid requestId,
         CancellationToken cancellationToken)
     {
         try
         {
+            var htmlBody = await _renderer.RenderAsync(templateName, model);
             await _emailSender.SendEmailAsync(recipient, subject, htmlBody, cancellationToken);
         }
         catch (Exception exception)
         {
             _logger.LogError(exception, "Circle request email failed after commit for request {RequestId}.", requestId);
         }
+    }
+
+    private static string GetDisplayName(ApplicationUser user, string fallback)
+    {
+        var displayName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(displayName) ? fallback : displayName;
     }
 }

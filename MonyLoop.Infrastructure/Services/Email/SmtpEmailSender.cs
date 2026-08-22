@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Infrastructure.Services.Email.Models;
 using System.Net;
@@ -9,14 +9,14 @@ namespace MonyLoop.Infrastructure.Services.Email
     public class SmtpEmailSender : IEmailSender
     {
         private readonly IEmailTemplateRenderer _renderer;
-        private readonly IConfiguration _configuration;
+        private readonly IOptions<SmtpOptions> _smtpOptions;
 
         public SmtpEmailSender(
             IEmailTemplateRenderer renderer,
-            IConfiguration configuration)
+            IOptions<SmtpOptions> smtpOptions)
         {
             _renderer = renderer;
-            _configuration = configuration;
+            _smtpOptions = smtpOptions;
         }
 
         public async Task SendWelcomeEmailAsync(
@@ -76,34 +76,19 @@ namespace MonyLoop.Infrastructure.Services.Email
             string htmlBody,
             CancellationToken ct = default)
         {
-            var smtpHost =
-                _configuration["Smtp:Host"];
-
-            var smtpPort =
-                int.Parse(
-                    _configuration["Smtp:Port"]
-                    ?? "587");
-
-            var smtpUser =
-                _configuration["Smtp:Username"];
-
-            var smtpPass =
-                _configuration["Smtp:Password"];
-
-            var fromEmail =
-                _configuration["Smtp:FromEmail"];
+            var smtp = _smtpOptions.Value;
 
             using var client =
                 new SmtpClient(
-                    smtpHost,
-                    smtpPort)
+                    smtp.Host,
+                    smtp.Port)
                 {
                     Credentials =
                         new NetworkCredential(
-                            smtpUser,
-                            smtpPass),
+                            smtp.Username,
+                            smtp.Password),
 
-                    EnableSsl = true
+                    EnableSsl = smtp.EnableSsl
                 };
 
             using var message =
@@ -111,8 +96,8 @@ namespace MonyLoop.Infrastructure.Services.Email
                 {
                     From =
                         new MailAddress(
-                            fromEmail!,
-                            "MonyLoop"),
+                            smtp.FromEmail,
+                            smtp.FromName),
 
                     Subject = subject,
                     Body = htmlBody,

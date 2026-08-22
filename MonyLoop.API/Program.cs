@@ -107,6 +107,10 @@ namespace MonyLoop.API
             builder.Services.AddScoped<IOTPService, OTPService>();
             builder.Services.AddScoped<IJwtService, JwtService>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+            builder.Services
+                .AddOptions<SmtpOptions>()
+                .Bind(builder.Configuration.GetSection(SmtpOptions.SectionName))
+                .ValidateDataAnnotations();
             builder.Services.AddScoped<IEmailTemplateRenderer, RazorLightEmailRenderer>();
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
