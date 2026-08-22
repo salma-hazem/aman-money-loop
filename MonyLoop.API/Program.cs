@@ -44,6 +44,7 @@ using MonyLoop.Infrastructure.Services.Email;
 using MonyLoop.Infrastructure.Services.UserAuth;
 using QuestPDF.Infrastructure;
 using StackExchange.Redis;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 namespace MonyLoop.API
@@ -78,7 +79,34 @@ namespace MonyLoop.API
             // ===== Swagger =====
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
-                options.SchemaFilter<CircleRequestEnumSchemaFilter>());
+            {
+                options.SchemaFilter<CircleRequestEnumSchemaFilter>();
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter your JWT token"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+            });
 
             // ===== AutoMapper =====
             builder.Services.AddAutoMapper(typeof(AgreementPaymentProfile).Assembly);
@@ -174,6 +202,23 @@ namespace MonyLoop.API
                 .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddHangfireServer();
 
+            
+
+            // ===== Identity =====
+            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<MonyLoopDbContext>()
+            .AddDefaultTokenProviders();
+
             // ===== JWT Authentication =====
             builder.Services.AddAuthentication(options =>
             {
@@ -195,21 +240,6 @@ namespace MonyLoop.API
                     ClockSkew = TimeSpan.Zero
                 };
             });
-
-            // ===== Identity =====
-            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
-            {
-                options.Password.RequireDigit = true;
-                options.Password.RequiredLength = 8;
-                options.Password.RequireNonAlphanumeric = false;
-
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddEntityFrameworkStores<MonyLoopDbContext>()
-            .AddDefaultTokenProviders();
 
             //===== Redis =====
             builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
