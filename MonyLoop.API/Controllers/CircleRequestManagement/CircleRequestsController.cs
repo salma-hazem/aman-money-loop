@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.API.Authentication;
 using MonyLoop.Application.DTOs.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Constants;

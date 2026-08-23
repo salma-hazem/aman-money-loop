@@ -1,11 +1,12 @@
 using FluentValidation;
 using MonyLoop.Application.DTOs.UserAuth;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Application.Validators.UserAuth;
 
-public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequestDto>
+public sealed class CreateInternalUserRequestValidator : AbstractValidator<CreateInternalUserRequestDto>
 {
-    public RegisterRequestValidator()
+    public CreateInternalUserRequestValidator()
     {
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
@@ -19,9 +20,8 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .Matches(@"^\d+$")
             .When(x => !string.IsNullOrWhiteSpace(x.NationalId))
             .WithMessage("National ID must be exactly 14 digits.");
-        RuleFor(x => x.Password).ApplyPasswordRules();
-        RuleFor(x => x.ConfirmPassword)
-            .Equal(x => x.Password)
-            .WithMessage("Password confirmation does not match.");
+        RuleFor(x => x.Role)
+            .Must(role => role is ApplicationRole.Admin or ApplicationRole.Organizer)
+            .WithMessage("Role must be Admin or Organizer.");
     }
 }

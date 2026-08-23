@@ -1,21 +1,19 @@
-﻿using FluentValidation;
+using FluentValidation;
 using MonyLoop.Application.DTOs.UserAuth;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MonyLoop.Application.Validators.UserAuth
+namespace MonyLoop.Application.Validators.UserAuth;
+
+public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequestDto>
 {
-    public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequestDto>
+    public ChangePasswordRequestValidator()
     {
-        public ChangePasswordRequestValidator()
-        {
-            RuleFor(x => x.CurrentPassword).NotEmpty();
-            RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8)
-                .Must(p => p.Any(char.IsDigit)).WithMessage("Password must contain at least one digit.");
-        }
+        RuleFor(x => x.CurrentPassword).NotEmpty();
+        RuleFor(x => x.NewPassword).ApplyPasswordRules();
+        RuleFor(x => x.ConfirmNewPassword)
+            .Equal(x => x.NewPassword)
+            .WithMessage("Password confirmation does not match.");
+        RuleFor(x => x.NewPassword)
+            .NotEqual(x => x.CurrentPassword)
+            .WithMessage("The new password must be different from the current password.");
     }
-
 }

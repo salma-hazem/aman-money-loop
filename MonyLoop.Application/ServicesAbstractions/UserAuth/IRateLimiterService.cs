@@ -9,5 +9,6 @@ namespace MonyLoop.Application.ServicesAbstractions.UserAuth
     public interface IRateLimiterService
     {
         Task<bool> IsAllowedAsync(string key, TimeSpan window);
+        Task<bool> IsWithinLimitAsync(string key, int limit, TimeSpan window);
     }
 }

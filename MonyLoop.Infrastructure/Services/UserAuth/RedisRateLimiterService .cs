@@ -28,5 +28,18 @@ namespace MonyLoop.Infrastructure.Services.UserAuth
             // لو معتحطش = فيه طلب حصل قبل كده لسه جوه الـ window، ممنوع
             return wasSet;
         }
+
+        public async Task<bool> IsWithinLimitAsync(string key, int limit, TimeSpan window)
+        {
+            var db = _redis.GetDatabase();
+            var count = await db.StringIncrementAsync(key);
+
+            if (count == 1)
+            {
+                await db.KeyExpireAsync(key, window);
+            }
+
+            return count <= limit;
+        }
     }
 }

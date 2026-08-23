@@ -22,11 +22,13 @@ namespace MonyLoop.Infrastructure.Data.Configurations.UserAuth
                 .HasMaxLength(100);
 
             builder.Property(x => x.NationalId)
-                .IsRequired()
                 .HasMaxLength(20);
 
             builder.Property(x => x.ProfilePictureUrl)
                 .HasMaxLength(500);
+
+            builder.Property(x => x.PendingEmail)
+                .HasMaxLength(256);
 
             builder.Property(x => x.MustChangePassword)
                 .IsRequired()

@@ -1,75 +1,129 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Domain.Entities.UserAuth;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MonyLoop.Infrastructure.DataSeeding
+namespace MonyLoop.Infrastructure.DataSeeding;
+
+public sealed class IdentityDataInitializer : IDataInitializer
 {
-    public class IdentityDataInitializer : IDataInitializer
+    private static readonly string[] RequiredRoles =
+    [
+        ApplicationRole.Admin,
+        ApplicationRole.Organizer,
+        ApplicationRole.Member
+    ];
+
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly SeedAdminOptions _options;
+    private readonly ILogger<IdentityDataInitializer> _logger;
+
+    public IdentityDataInitializer(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
+        IOptions<SeedAdminOptions> options,
+        ILogger<IdentityDataInitializer> logger)
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<ApplicationRole> _roleManager;
-        private readonly ILogger<IdentityDataInitializer> _logger;
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _options = options.Value;
+        _logger = logger;
+    }
 
-        public IdentityDataInitializer(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<ApplicationRole> roleManager,
-            ILogger<IdentityDataInitializer> logger)
+    public async Task InitializeAsync()
+    {
+        try
         {
-            _userManager = userManager;
-            _roleManager = roleManager;
-            _logger = logger;
+            await EnsureRolesAsync();
+            await EnsureInitialAdminAsync();
         }
-
-        public async Task InitializeAsync()
+        catch (Exception exception)
         {
-            try
+            _logger.LogError(exception, "Error while seeding Identity data.");
+        }
+    }
+
+    private async Task EnsureRolesAsync()
+    {
+        foreach (var roleName in RequiredRoles)
+        {
+            if (await _roleManager.RoleExistsAsync(roleName))
             {
-                if (!_roleManager.Roles.Any())
-                {
-                    await _roleManager.CreateAsync(new ApplicationRole { Name = ApplicationRole.Admin });
-                    await _roleManager.CreateAsync(new ApplicationRole { Name = ApplicationRole.Organizer });
-                    await _roleManager.CreateAsync(new ApplicationRole { Name = ApplicationRole.Member });
-                }
-
-                if (!_userManager.Users.Any())
-                {
-                    var adminUser = new ApplicationUser
-                    {
-                        Id = Guid.NewGuid(),
-                        UserName = "admin@monyloop.com",
-                        Email = "admin@monyloop.com",
-                        FirstName = "System",
-                        LastName = "Admin",
-                        NationalId = "00000000000000",
-                        EmailConfirmed = true,
-                        MustChangePassword = true,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    var result = await _userManager.CreateAsync(adminUser, "Admin@123");
-                    if (result.Succeeded)
-                    {
-                        await _userManager.AddToRoleAsync(adminUser, ApplicationRole.Admin);
-                        _logger.LogInformation("Initial Admin user created successfully.");
-                    }
-                    else
-                    {
-                        _logger.LogError("Failed to create initial Admin user: {Errors}",
-                            string.Join(", ", result.Errors.Select(e => e.Description)));
-                    }
-                }
+                continue;
             }
-            catch (Exception ex)
+
+            var result = await _roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+            if (!result.Succeeded)
             {
-                _logger.LogError(ex, "Error while seeding Identity database.");
+                _logger.LogError(
+                    "Failed to create role {Role}: {Errors}",
+                    roleName,
+                    string.Join(", ", result.Errors.Select(error => error.Description)));
             }
         }
+    }
+
+    private async Task EnsureInitialAdminAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_options.Email) ||
+            string.IsNullOrWhiteSpace(_options.Password))
+        {
+            _logger.LogWarning(
+                "Initial Admin was not seeded because SeedAdmin:Email or SeedAdmin:Password is missing.");
+            return;
+        }
+
+        var email = _options.Email.Trim();
+        var existingUser = await _userManager.FindByEmailAsync(email);
+        if (existingUser is not null)
+        {
+            if (!await _userManager.IsInRoleAsync(existingUser, ApplicationRole.Admin))
+            {
+                await _userManager.AddToRoleAsync(existingUser, ApplicationRole.Admin);
+            }
+
+            return;
+        }
+
+        var admin = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = email,
+            Email = email,
+            FirstName = string.IsNullOrWhiteSpace(_options.FirstName)
+                ? "System"
+                : _options.FirstName.Trim(),
+            LastName = string.IsNullOrWhiteSpace(_options.LastName)
+                ? "Admin"
+                : _options.LastName.Trim(),
+            NationalId = null,
+            EmailConfirmed = true,
+            MustChangePassword = true,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createResult = await _userManager.CreateAsync(admin, _options.Password);
+        if (!createResult.Succeeded)
+        {
+            _logger.LogError(
+                "Failed to create the initial Admin: {Errors}",
+                string.Join(", ", createResult.Errors.Select(error => error.Description)));
+            return;
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(admin, ApplicationRole.Admin);
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(admin);
+            _logger.LogError(
+                "Failed to assign the Admin role: {Errors}",
+                string.Join(", ", roleResult.Errors.Select(error => error.Description)));
+            return;
+        }
+
+        _logger.LogInformation("Initial Admin {Email} was created.", email);
     }
 }

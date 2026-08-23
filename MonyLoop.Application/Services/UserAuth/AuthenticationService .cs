@@ -1,16 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs.UserAuth;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Domain.Constants.UserAuth;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace MonyLoop.Application.Services.UserAuth
 {
@@ -19,195 +15,287 @@ namespace MonyLoop.Application.Services.UserAuth
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOTPService _otpService;
-        private readonly IEmailSender _emailSender;
         private readonly IJwtService _jwtService;
 
         public AuthenticationService(
             UserManager<ApplicationUser> userManager,
             IUnitOfWork unitOfWork,
             IOTPService otpService,
-            IEmailSender emailSender,
             IJwtService jwtService)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
             _otpService = otpService;
-            _emailSender = emailSender;
             _jwtService = jwtService;
         }
 
         public async Task<Result<Guid>> RegisterAsync(RegisterRequestDto request, CancellationToken ct = default)
         {
-            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            var email = request.Email.Trim();
+            var existingUser = await _userManager.FindByEmailAsync(email);
             if (existingUser != null)
-                return Result<Guid>.Fail(Error.Validation("Auth.EmailExists", "هذا البريد الإلكتروني مستخدم بالفعل."));
-
-            var temporaryPassword = GenerateTemporaryPassword();
+                return Result<Guid>.Fail(Error.Validation("Auth.EmailExists", "This email address is already registered."));
 
             var user = new ApplicationUser
             {
                 Id = Guid.NewGuid(),
-                Email = request.Email,
-                UserName = request.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                NationalId = request.NationalId,
-                PhoneNumber = request.PhoneNumber,
-                MustChangePassword = true,
+                Email = email,
+                UserName = email,
+                FirstName = request.FirstName.Trim(),
+                LastName = request.LastName.Trim(),
+                NationalId = NormalizeOptional(request.NationalId),
+                PhoneNumber = request.PhoneNumber.Trim(),
+                MustChangePassword = false,
                 EmailConfirmed = false,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
-            var identityResult = await _userManager.CreateAsync(user, temporaryPassword);
+            var identityResult = await _userManager.CreateAsync(user, request.Password);
             if (!identityResult.Succeeded)
+                return Result<Guid>.Fail(identityResult.ToValidationErrors());
+
+            var roleResult = await _userManager.AddToRoleAsync(user, ApplicationRole.Member);
+            if (!roleResult.Succeeded)
             {
-                var errors = identityResult.Errors
-                    .Select(e => Error.Validation(e.Code, e.Description))
-                    .ToList();
-                return Result<Guid>.Fail(errors);
+                await _userManager.DeleteAsync(user);
+                return Result<Guid>.Fail(roleResult.ToValidationErrors());
             }
 
-            await _userManager.AddToRoleAsync(user, ApplicationRole.Member);
+            var otpResult = await _otpService.GenerateAndSendAsync(
+                user.Id,
+                user.Email!,
+                user.FirstName,
+                OTPPurpose.RegistrationConfirmation,
+                ct);
 
-            await _emailSender.SendWelcomeEmailAsync(user.Email, $"{user.FirstName} {user.LastName}", temporaryPassword, "https://monyloop.com/login", ct);
-
-            await _otpService.GenerateAndSendAsync(user.Id, user.Email, user.FirstName, OTPPurpose.RegistrationConfirmation, ct);
+            if (otpResult.IsFailure)
+                return Result<Guid>.Fail(otpResult.Errors.ToList());
 
             return Result<Guid>.Ok(user.Id);
         }
 
         public async Task<Result> ConfirmRegistrationOtpAsync(ConfirmOtpRequestDto request, CancellationToken ct = default)
         {
-            var verifyResult = await _otpService.VerifyAsync(request.UserId, request.Code, OTPPurpose.RegistrationConfirmation, ct);
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return Result.Fail(Error.NotFound("Auth.UserNotFound", "User was not found."));
+
+            if (user.EmailConfirmed)
+                return Result.Ok();
+
+            var verifyResult = await _otpService.VerifyAsync(
+                request.UserId,
+                request.Code,
+                OTPPurpose.RegistrationConfirmation,
+                ct);
+
             if (verifyResult.IsFailure)
                 return verifyResult;
 
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (user == null)
-                return Result.Fail(Error.NotFound("Auth.UserNotFound", "المستخدم غير موجود."));
-
             user.EmailConfirmed = true;
-            await _userManager.UpdateAsync(user);
+            user.UpdatedAt = DateTime.UtcNow;
+            var updateResult = await _userManager.UpdateAsync(user);
 
-            return Result.Ok();
+            return updateResult.Succeeded
+                ? Result.Ok()
+                : Result.Fail(updateResult.ToValidationErrors());
         }
 
-        private static string GenerateTemporaryPassword()
+        public async Task<Result> ResendRegistrationOtpAsync(ResendRegistrationOtpRequestDto request, CancellationToken ct = default)
         {
-            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
-            var bytes = new byte[10];
-            RandomNumberGenerator.Fill(bytes);
-            return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return Result.Fail(Error.NotFound("Auth.UserNotFound", "User was not found."));
+
+            if (user.EmailConfirmed)
+                return Result.Fail(Error.Validation("Auth.EmailAlreadyConfirmed", "The email address is already confirmed."));
+
+            return await _otpService.GenerateAndSendAsync(
+                user.Id,
+                user.Email!,
+                user.FirstName,
+                OTPPurpose.RegistrationConfirmation,
+                ct);
         }
 
         public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto request, CancellationToken ct = default)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
             if (user == null)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidCredentials", "البريد الإلكتروني أو كلمة المرور غير صحيحة."));
+                return InvalidCredentials();
 
             if (!user.IsActive)
-                return Result<AuthResponseDto>.Fail(Error.Forbidden("Auth.AccountDisabled", "هذا الحساب معطل."));
+                return Result<AuthResponseDto>.Fail(Error.Forbidden("Auth.AccountDisabled", "This account is disabled."));
 
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
             if (!isPasswordValid)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidCredentials", "البريد الإلكتروني أو كلمة المرور غير صحيحة."));
+                return InvalidCredentials();
 
             if (!user.EmailConfirmed)
-                return Result<AuthResponseDto>.Fail(Error.Validation("Auth.EmailNotConfirmed", "يرجى تأكيد بريدك الإلكتروني أولاً."));
+                return Result<AuthResponseDto>.Fail(Error.Validation("Auth.EmailNotConfirmed", "Confirm your email before logging in."));
 
             var roles = await _userManager.GetRolesAsync(user);
             var response = await GenerateAuthResponseAsync(user, roles, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result<AuthResponseDto>.Ok(response);
         }
 
         public async Task<Result<AuthResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto request, CancellationToken ct = default)
         {
-            var principal = _jwtService.GetPrincipalFromExpiredToken(request.AccessToken);
-            if (principal == null)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidToken", "التوكن غير صالح."));
+            ClaimsPrincipal? principal;
+            try
+            {
+                principal = _jwtService.GetPrincipalFromExpiredToken(request.AccessToken);
+            }
+            catch (SecurityTokenException)
+            {
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidToken", "The access token is invalid."));
+            }
+            catch (ArgumentException)
+            {
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidToken", "The access token is invalid."));
+            }
 
-            var userIdClaim = principal.FindFirst("uid")?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidToken", "التوكن غير صالح."));
+            if (principal == null || !TryGetUserId(principal, out var userId))
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidToken", "The access token is invalid."));
 
             var storedToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(request.RefreshToken, ct);
-            if (storedToken == null || storedToken.UserId != userId)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidRefreshToken", "توكن التحديث غير صالح."));
+            if (storedToken == null || storedToken.UserId != userId || storedToken.IsRevoked)
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidRefreshToken", "The refresh token is invalid."));
 
-            if (storedToken.IsRevoked)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.RevokedToken", "تم إلغاء هذا التوكن."));
+            if (storedToken.ExpiresAt <= DateTime.UtcNow)
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.ExpiredRefreshToken", "The refresh token has expired."));
 
-            if (storedToken.ExpiresAt < DateTime.UtcNow)
-                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.ExpiredRefreshToken", "انتهت صلاحية توكن التحديث، يرجى تسجيل الدخول مرة أخرى."));
+            var user = storedToken.User ?? await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null || !user.IsActive)
+                return Result<AuthResponseDto>.Fail(Error.InvalidCredentials("Auth.InvalidRefreshToken", "The refresh token is invalid."));
 
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                return Result<AuthResponseDto>.Fail(Error.NotFound("Auth.UserNotFound", "المستخدم غير موجود."));
-
-            // إلغاء التوكن القديم (Rotation)
             storedToken.IsRevoked = true;
             storedToken.RevokedAt = DateTime.UtcNow;
 
             var roles = await _userManager.GetRolesAsync(user);
             var response = await GenerateAuthResponseAsync(user, roles, ct);
-
             storedToken.ReplacedByToken = response.RefreshToken;
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result<AuthResponseDto>.Ok(response);
         }
 
+        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request, CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return Result.Fail(Error.NotFound("Auth.UserNotFound", "User was not found."));
+
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!result.Succeeded)
+                return Result.Fail(result.ToValidationErrors());
+
+            user.MustChangePassword = false;
+            user.UpdatedAt = DateTime.UtcNow;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+                return Result.Fail(updateResult.ToValidationErrors());
+
+            await _unitOfWork.RefreshTokens.RevokeAllActiveAsync(user.Id, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        public async Task<Result> ForgotPasswordAsync(ForgotPasswordRequestDto request, CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user == null || !user.IsActive || !user.EmailConfirmed)
+                return Result.Ok();
+
+            await _otpService.GenerateAndSendAsync(
+                user.Id,
+                user.Email!,
+                user.FirstName,
+                OTPPurpose.PasswordReset,
+                ct);
+
+            return Result.Ok();
+        }
+
+        public async Task<Result> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user == null || !user.IsActive)
+                return Result.Fail(Error.Validation("Auth.InvalidPasswordReset", "The password reset request is invalid."));
+
+            var otpResult = await _otpService.VerifyAsync(
+                user.Id,
+                request.Code,
+                OTPPurpose.PasswordReset,
+                ct);
+
+            if (otpResult.IsFailure)
+                return otpResult;
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetResult = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+            if (!resetResult.Succeeded)
+                return Result.Fail(resetResult.ToValidationErrors());
+
+            user.MustChangePassword = false;
+            user.UpdatedAt = DateTime.UtcNow;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+                return Result.Fail(updateResult.ToValidationErrors());
+
+            await _unitOfWork.RefreshTokens.RevokeAllActiveAsync(user.Id, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
         private async Task<AuthResponseDto> GenerateAuthResponseAsync(ApplicationUser user, IList<string> roles, CancellationToken ct)
         {
-            var accessToken = _jwtService.GenerateAccessToken(user, roles);
             var refreshTokenValue = _jwtService.GenerateRefreshToken();
 
-            var refreshTokenExpiryDays = 7; // ممكن تجيبها من appsettings لو حابب
             var refreshToken = new RefreshToken
             {
                 RefreshTokenId = Guid.NewGuid(),
                 UserId = user.Id,
                 Token = refreshTokenValue,
-                ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpiryDays),
+                ExpiresAt = DateTime.UtcNow.Add(_jwtService.RefreshTokenLifetime),
                 CreatedAt = DateTime.UtcNow,
                 IsRevoked = false
             };
 
             await _unitOfWork.RefreshTokens.AddAsync(refreshToken, ct);
-            await _unitOfWork.SaveChangesAsync(ct);
 
             return new AuthResponseDto
             {
                 UserId = user.Id,
                 Email = user.Email!,
                 FullName = $"{user.FirstName} {user.LastName}",
-                AccessToken = accessToken,
+                AccessToken = _jwtService.GenerateAccessToken(user, roles),
                 RefreshToken = refreshTokenValue,
                 MustChangePassword = user.MustChangePassword,
                 Roles = roles
             };
         }
 
-        public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request, CancellationToken ct = default)
+        private static Result<AuthResponseDto> InvalidCredentials() =>
+            Result<AuthResponseDto>.Fail(Error.InvalidCredentials(
+                "Auth.InvalidCredentials",
+                "The email or password is incorrect."));
+
+        private static bool TryGetUserId(ClaimsPrincipal principal, out Guid userId)
         {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                return Result.Fail(Error.NotFound("Auth.UserNotFound", "المستخدم غير موجود."));
+            var standardId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (Guid.TryParse(standardId, out userId))
+                return true;
 
-            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-            if (!result.Succeeded)
-            {
-                var errors = result.Errors.Select(e => Error.Validation(e.Code, e.Description)).ToList();
-                return Result.Fail(errors);
-            }
-
-            user.MustChangePassword = false;
-            await _userManager.UpdateAsync(user);
-
-            return Result.Ok();
+            return Guid.TryParse(principal.FindFirstValue("uid"), out userId);
         }
+
+        private static string? NormalizeOptional(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

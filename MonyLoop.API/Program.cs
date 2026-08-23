@@ -138,6 +138,15 @@ namespace MonyLoop.API
             builder.Services.AddScoped<IOTPService, OTPService>();
             builder.Services.AddScoped<IJwtService, JwtService>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+            builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+            builder.Services
+                .AddOptions<JwtOptions>()
+                .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+                .ValidateDataAnnotations();
+            builder.Services
+                .AddOptions<SeedAdminOptions>()
+                .Bind(builder.Configuration.GetSection(SeedAdminOptions.SectionName));
             builder.Services
                 .AddOptions<SmtpOptions>()
                 .Bind(builder.Configuration.GetSection(SmtpOptions.SectionName))
@@ -209,7 +218,10 @@ namespace MonyLoop.API
             {
                 options.Password.RequireDigit = true;
                 options.Password.RequiredLength = 8;
-                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequiredUniqueChars = 1;
 
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -217,7 +229,8 @@ namespace MonyLoop.API
                 options.User.RequireUniqueEmail = true;
             })
             .AddEntityFrameworkStores<MonyLoopDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddPasswordValidator<MaximumPasswordLengthValidator<ApplicationUser>>();
 
             // ===== JWT Authentication =====
             builder.Services.AddAuthentication(options =>

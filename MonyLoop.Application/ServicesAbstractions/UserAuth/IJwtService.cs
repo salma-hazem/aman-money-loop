@@ -12,6 +12,7 @@ namespace MonyLoop.Application.ServicesAbstractions.UserAuth
     {
         string GenerateAccessToken(ApplicationUser user, IList<string> roles);
         string GenerateRefreshToken();
+        TimeSpan RefreshTokenLifetime { get; }
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     }
 }

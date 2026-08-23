@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.API.Authentication;
 using MonyLoop.Application.DTOs.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Constants;
@@ -32,7 +33,7 @@ public sealed class CirclesController : ApiBaseController
     public async Task<ActionResult<IReadOnlyList<CircleSlotResponseDto>>> GetSlots(Guid id, CancellationToken cancellationToken) =>
         HandleResult(await _service.GetSlotsAsync(id, cancellationToken));
 
-    [Authorize(Roles = SystemRoles.Admin)]
+    [Authorize(Roles = ApplicationRole.Admin)]
     [HttpPost("{id:guid}/slots/{slotNumber:int}/vacate")]
     public async Task<ActionResult<CircleSlotResponseDto>> Vacate(
         Guid id,

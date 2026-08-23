@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
-using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Infrastructure.Services.Email;
@@ -35,7 +34,7 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
     {
         try
         {
-            var admins = await _userManager.GetUsersInRoleAsync(SystemRoles.Admin);
+            var admins = await _userManager.GetUsersInRoleAsync(ApplicationRole.Admin);
             if (admins.Count == 0)
             {
                 _logger.LogWarning("No Admin recipients were found for circle request {RequestId}.", request.RequestId);

@@ -11,5 +11,6 @@ namespace MonyLoop.Domain.Interfaces.UserAuth
     {
         Task AddAsync(RefreshToken token, CancellationToken ct = default);
         Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken ct = default);
+        Task RevokeAllActiveAsync(Guid userId, CancellationToken ct = default);
     }
 }

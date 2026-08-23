@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.API.Authentication;
 using MonyLoop.Application.DTOs.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
-using MonyLoop.Domain.Constants;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.API.Controllers.CircleRequestManagement;
 
-[Authorize(Roles = SystemRoles.Admin)]
+[Authorize(Roles = ApplicationRole.Admin)]
 [Route("api/admin/circle-requests")]
 public sealed class AdminCircleRequestsController : ApiBaseController
 {

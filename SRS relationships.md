@@ -4,11 +4,21 @@ This file reflects the current Domain model plus the agreed corrections needed f
 
 ## Module 1 - User and Account Management
 
-- Module 1 implementation is on hold until ASP.NET Core Identity is finalized.
-- Admin-created users should be represented by a custom field on the Identity user, such as CreatedByAdminId.
-- User to Role should use ASP.NET Core Identity role mapping.
-- User to OtpToken may be custom if the team keeps a separate OTP table. OtpToken.UserId should be nullable to support pre-registration OTPs by email.
-- Business entities keep user-related Guid FK fields for now. User navigation properties are commented in code until the final Identity user type is introduced.
+- ApplicationUser to ApplicationRole: many-to-many through ASP.NET Core Identity `UserRoles`.
+- ApplicationUser(Admin) to ApplicationUser(created account): optional one-to-many through `RegisteredByAdminId`.
+- ApplicationUser to OTPToken: one-to-many. `OTPToken.UserId` is required because the unconfirmed Identity user is created before the registration OTP is issued.
+- ApplicationUser to RefreshToken: one-to-many.
+- Canonical role names across every module are `Admin`, `Organizer`, and `Member`.
+
+Lifecycle and security rules:
+
+- Public Member registration uses a member-supplied password and requires a single-use registration OTP before login.
+- Admin-created Organizer/Admin accounts are email-confirmed, receive a temporary password, and are blocked from protected workflows until changing it.
+- Forgot Password starts password recovery by emailing an OTP; Reset Password completes that same flow with the OTP and new password.
+- Authenticated Change Password requires the current password and does not use an OTP.
+- Email changes remain pending until an OTP sent to the new address is confirmed.
+- OTPs are stored as hashes in SQL, expire after ten minutes, allow five verification attempts, and are invalidated when used or replaced.
+- Refresh tokens rotate on refresh and are revoked after security-sensitive account changes.
 
 ## Module 2 - Circle Request and Configuration Management
 

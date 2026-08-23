@@ -1,98 +1,122 @@
-﻿using MonyLoop.Application.Common;
+using Hangfire;
+using MonyLoop.Application.Common;
 using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Domain.Constants.UserAuth;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
-using Hangfire;
+using System.Security.Cryptography;
 
-namespace MonyLoop.Application.Services.UserAuth
+namespace MonyLoop.Application.Services.UserAuth;
+
+public class OTPService : IOTPService
 {
-    public class OTPService : IOTPService
+    private const int ExpiryMinutes = 10;
+    private const int MaxAttempts = 5;
+
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IEmailSender _emailSender;
+    private readonly IRateLimiterService _rateLimiter;
+
+    public OTPService(
+        IUnitOfWork unitOfWork,
+        IEmailSender emailSender,
+        IRateLimiterService rateLimiter)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IEmailSender _emailSender;
-        private const int ExpiryMinutes = 10;
-        private const int MaxAttempts = 5;
-        private readonly IRateLimiterService _rateLimiter;
+        _unitOfWork = unitOfWork;
+        _emailSender = emailSender;
+        _rateLimiter = rateLimiter;
+    }
 
-
-        public OTPService(IUnitOfWork unitOfWork, IEmailSender emailSender, IRateLimiterService rateLimiter)
+    public async Task<Result> GenerateAndSendAsync(
+        Guid userId,
+        string email,
+        string userName,
+        OTPPurpose purpose,
+        CancellationToken ct = default)
+    {
+        var cooldownKey = $"otp-request:{userId}:{purpose}";
+        if (!await _rateLimiter.IsAllowedAsync(cooldownKey, TimeSpan.FromSeconds(60)))
         {
-            _unitOfWork = unitOfWork;
-            _emailSender = emailSender;
-            _rateLimiter = rateLimiter;
+            return Result.Fail(Error.Validation(
+                "OTP.RateLimited",
+                "Please wait before requesting another OTP."));
         }
 
-        public async Task<Result> GenerateAndSendAsync(Guid userId, string email, string userName, OTPPurpose purpose, CancellationToken ct)
+        await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
+
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        var otp = new OTPToken
         {
-            await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
+            OTPTokenId = Guid.NewGuid(),
+            UserId = userId,
+            Code = code,
+            Purpose = purpose,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(ExpiryMinutes),
+            IsUsed = false,
+            AttemptsCount = 0,
+            CreatedAt = DateTime.UtcNow
+        };
 
+        await _unitOfWork.OTPTokens.AddAsync(otp, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
-            var rateLimitKey = $"otp-request:{userId}:{purpose}";
-            var isAllowed = await _rateLimiter.IsAllowedAsync(rateLimitKey, TimeSpan.FromSeconds(60));
+        BackgroundJob.Enqueue(() => _emailSender.SendOtpEmailAsync(
+            email,
+            userName,
+            code,
+            ExpiryMinutes,
+            CancellationToken.None));
 
-            if (!isAllowed)
-                return Result.Fail(Error.Validation("OTP.RateLimited", "يرجى الانتظار قبل طلب كود جديد."));
+        return Result.Ok();
+    }
 
-            await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
+    public async Task<Result> VerifyAsync(
+        Guid userId,
+        string code,
+        OTPPurpose purpose,
+        CancellationToken ct = default)
+    {
+        var otp = await _unitOfWork.OTPTokens.GetLatestActiveAsync(userId, purpose, ct);
+        if (otp is null)
+        {
+            return Result.Fail(Error.NotFound(
+                "OTP.NotFound",
+                "No active OTP was found. Please request a new code."));
+        }
 
-            var code = new Random().Next(100000, 999999).ToString();
+        if (otp.IsUsed)
+        {
+            return Result.Fail(Error.Validation(
+                "OTP.AlreadyUsed",
+                "This OTP has already been used."));
+        }
 
-            var otp = new OTPToken()
-            {
-                OTPTokenId = Guid.NewGuid(),
-                UserId = userId,
-                Code = code,
-                Purpose = purpose,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(ExpiryMinutes),
-                IsUsed = false,
-                AttemptsCount = 0,
-                CreatedAt = DateTime.UtcNow
-            };
+        if (otp.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Result.Fail(Error.Validation(
+                "OTP.Expired",
+                "The OTP has expired. Please request a new code."));
+        }
 
-            await _unitOfWork.OTPTokens.AddAsync(otp, ct);
+        if (otp.AttemptsCount >= MaxAttempts)
+        {
+            return Result.Fail(Error.Validation(
+                "OTP.MaxAttemptsExceeded",
+                "The maximum number of attempts has been exceeded."));
+        }
+
+        if (otp.Code != code)
+        {
+            otp.AttemptsCount++;
             await _unitOfWork.SaveChangesAsync(ct);
 
-            BackgroundJob.Enqueue(() => _emailSender.SendOtpEmailAsync(email, userName, code, ExpiryMinutes, CancellationToken.None));
-            return Result<string>.Ok(code);
-
+            return Result.Fail(Error.Validation(
+                "OTP.Invalid",
+                "The OTP is invalid."));
         }
 
-        public async Task<Result> VerifyAsync(Guid userId, string code, OTPPurpose purpose, CancellationToken ct = default)
-        {
-            var otp = await _unitOfWork.OTPTokens.GetLatestActiveAsync(userId, purpose, ct);
-
-            if (otp == null)
-                return Result.Fail(Error.NotFound("OTP.NotFound", "لا يوجد كود تحقق فعال، اطلب كود جديد."));
-
-            if (otp.IsUsed)
-                return Result.Fail(Error.Validation("OTP.AlreadyUsed", "هذا الكود مستخدم بالفعل."));
-
-            if (otp.ExpiresAt < DateTime.UtcNow)
-                return Result.Fail(Error.Validation("OTP.Expired", "انتهت صلاحية الكود، اطلب كود جديد."));
-
-            if (otp.AttemptsCount >= MaxAttempts)
-                return Result.Fail(Error.Validation("OTP.MaxAttemptsExceeded", "تم تجاوز عدد المحاولات المسموح، اطلب كود جديد."));
-
-            if (otp.Code != code)
-            {
-                otp.AttemptsCount++;
-                await _unitOfWork.SaveChangesAsync(ct);
-                return Result.Fail(Error.Validation("OTP.Invalid", "الكود الذي أدخلته غير صحيح."));
-            }
-
-            otp.IsUsed = true;
-            await _unitOfWork.SaveChangesAsync(ct);
-            return Result.Ok();
-
-        }
-
-
+        otp.IsUsed = true;
+        await _unitOfWork.SaveChangesAsync(ct);
+        return Result.Ok();
     }
 }

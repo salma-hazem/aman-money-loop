@@ -13,8 +13,9 @@ namespace MonyLoop.Domain.Entities.UserAuth
     {
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
-        public string NationalId { get; set; } = null!;
+        public string? NationalId { get; set; }
         public string? ProfilePictureUrl { get; set; }
+        public string? PendingEmail { get; set; }
         public bool MustChangePassword { get; set; }
         public Guid? RegisteredByAdminId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

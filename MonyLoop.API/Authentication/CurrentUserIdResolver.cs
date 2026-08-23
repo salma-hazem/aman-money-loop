@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace MonyLoop.API.Controllers.CircleRequestManagement;
+namespace MonyLoop.API.Authentication;
 
 internal static class CurrentUserIdResolver
 {

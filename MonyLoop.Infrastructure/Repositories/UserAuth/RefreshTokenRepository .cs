@@ -30,5 +30,19 @@ namespace MonyLoop.Infrastructure.Repositories.UserAuth
                 .Include(r => r.User)
                 .FirstOrDefaultAsync(r => r.Token == token, ct);
         }
+
+        public async Task RevokeAllActiveAsync(Guid userId, CancellationToken ct = default)
+        {
+            var revokedAt = DateTime.UtcNow;
+            var activeTokens = await _dbContext.RefreshTokens
+                .Where(token => token.UserId == userId && !token.IsRevoked)
+                .ToListAsync(ct);
+
+            foreach (var token in activeTokens)
+            {
+                token.IsRevoked = true;
+                token.RevokedAt = revokedAt;
+            }
+        }
     }
 }
