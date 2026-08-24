@@ -1,5 +1,5 @@
 using Mony_Loop.Domain.Constants.Verification;
-using Mony_Loop.Domain.Entities.Circle_Request___Configuration;
+using Mony_Loop.Domain.Entities.CircleRequestManagement;
 
 namespace Mony_Loop.Domain.Entities.Verification
 {

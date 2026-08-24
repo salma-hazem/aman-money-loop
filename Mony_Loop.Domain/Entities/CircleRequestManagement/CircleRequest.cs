@@ -1,6 +1,6 @@
 using Mony_Loop.Domain.Constants;
 
-namespace Mony_Loop.Domain.Entities.Circle_Request___Configuration
+namespace Mony_Loop.Domain.Entities.CircleRequestManagement
 {
     public class CircleRequest
     {
