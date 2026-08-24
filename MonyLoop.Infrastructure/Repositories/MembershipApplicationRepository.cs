@@ -19,6 +19,7 @@ namespace MonyLoop.Infrastructure.Repositories
         public async Task<MembershipApplication?> GetByIdAsync(Guid membershipApplicationId)
         {
             return await _context.MembershipApplications
+                .Include(a => a.MarketplaceListing)
                 .FirstOrDefaultAsync(a => a.MembershipApplicationId == membershipApplicationId);
         }
         public async Task<(List<MembershipApplication> Items, int TotalCount)> GetByListingIdAsync(

@@ -146,17 +146,18 @@ namespace MonyLoop.Application.Services
         }
 
         private static MembershipApplicationDetailDto ToDetailDto(MembershipApplication a) =>
-            new()
-            {
-                MembershipApplicationId = a.MembershipApplicationId,
-                ListingId = a.ListingId,
-                Name = a.Name,
-                Email = a.Email,
-                Phone = a.Phone,
-                NationalId = a.NationalId,
-                Stage = a.Stage,
-                CreatedAt = a.CreatedAt,
-                UpdatedAt = a.UpdatedAt
-            };
+    new()
+    {
+        MembershipApplicationId = a.MembershipApplicationId,
+        ListingId = a.ListingId,
+        CircleId = a.MarketplaceListing?.CircleId ?? Guid.Empty,   
+        Name = a.Name,
+        Email = a.Email,
+        Phone = a.Phone,
+        NationalId = a.NationalId,
+        Stage = a.Stage,
+        CreatedAt = a.CreatedAt,
+        UpdatedAt = a.UpdatedAt
+    };
     }
 }
