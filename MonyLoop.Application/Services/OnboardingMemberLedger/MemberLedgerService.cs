@@ -221,5 +221,61 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             var responseDto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);
             return (Result<MemberLedgerResponseDto>)responseDto;
         }
+
+        public async Task<Result<List<MemberLedgerResponseDto>>> GetAllAsync(
+    CancellationToken ct = default)
+        {
+            var memberLedgers =
+                await _unitOfWork.MemberLedgers.GetAllWithDetailsAsync(ct);
+
+            var responseDtos = memberLedgers
+                .Select(MapLedgerWithDetails)
+                .ToList();
+
+            return (Result<List<MemberLedgerResponseDto>>)responseDtos;
+        }
+
+        public async Task<Result<List<MemberLedgerResponseDto>>> GetByOrganizerIdAsync(Guid organizerId,CancellationToken ct = default)
+        {
+            if (organizerId == Guid.Empty)
+            {
+                return Result<List<MemberLedgerResponseDto>>.Fail(
+                    Error.Validation(
+                        "MemberLedger.InvalidOrganizerId",
+                        "The authenticated Organizer ID is invalid."));
+            }
+
+            var memberLedgers =
+                await _unitOfWork.MemberLedgers.GetByOrganizerIdAsync(
+                    organizerId,
+                    ct);
+
+            var responseDtos = memberLedgers
+                .Select(MapLedgerWithDetails)
+                .ToList();
+
+            return (Result<List<MemberLedgerResponseDto>>)responseDtos;
+        }
+
+        private MemberLedgerResponseDto MapLedgerWithDetails(MemberLedger memberLedger)
+        {
+            var dto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);
+
+            dto.MemberName = memberLedger.User == null
+                ? string.Empty
+                : $"{memberLedger.User.FirstName} {memberLedger.User.LastName}".Trim();
+
+            dto.CircleTitle =
+                memberLedger.CircleSlot?
+                    .Circle?
+                    .CircleRequest?
+                    .CircleTitle
+                ?? string.Empty;
+
+            dto.SlotNumber =
+                memberLedger.CircleSlot?.SlotNumber;
+
+            return dto;
+        }
     }
 }

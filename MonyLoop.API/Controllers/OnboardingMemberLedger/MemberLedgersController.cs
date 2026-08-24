@@ -39,5 +39,30 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             var result = await _memberLedgerService.GetByUserIdAsync(userId, ct);
             return HandleResult(result);
         }
+
+        [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
+        [HttpGet]
+        public async Task<ActionResult<List<MemberLedgerResponseDto>>> GetAvailableLedgers(CancellationToken ct)
+        {
+            var userIdValue = User.FindFirst("uid")?.Value;
+
+            if (!Guid.TryParse(userIdValue, out var currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (User.IsInRole(ApplicationRole.Admin))
+            {
+                var result = await _memberLedgerService.GetAllAsync(ct);
+                return HandleResult(result);
+            }
+
+            var organizerResult =
+                await _memberLedgerService.GetByOrganizerIdAsync(
+                    currentUserId,
+                    ct);
+
+            return HandleResult(organizerResult);
+        }
     }
 }
