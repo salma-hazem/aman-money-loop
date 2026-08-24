@@ -23,6 +23,11 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
             builder.Property(x => x.CreatedAt)
                 .IsRequired();
 
+            builder.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             //  Relationships
             builder.HasOne(x => x.MembershipAgreement)
                 .WithOne(x => x.OnboardingCase)

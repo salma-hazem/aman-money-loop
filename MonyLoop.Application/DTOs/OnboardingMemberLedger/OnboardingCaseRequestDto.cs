@@ -8,6 +8,7 @@ namespace MonyLoop.Application.DTOs.OnboardingMemberLedger
 {
     public class OnboardingCaseRequestDto
     {
+        public Guid UserId { get; set; }
         public Guid MembershipAgreementId { get; set; }
         public Guid OrganizerId { get; set; }
 
