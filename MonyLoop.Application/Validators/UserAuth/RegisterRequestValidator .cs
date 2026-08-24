@@ -15,9 +15,10 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .Matches(@"^01[0125][0-9]{8}$")
             .WithMessage("Invalid Egyptian phone number format.");
         RuleFor(x => x.NationalId)
+            .NotEmpty()
+            .WithMessage("National ID is required.")
             .Length(14)
             .Matches(@"^\d+$")
-            .When(x => !string.IsNullOrWhiteSpace(x.NationalId))
             .WithMessage("National ID must be exactly 14 digits.");
         RuleFor(x => x.Password).ApplyPasswordRules();
         RuleFor(x => x.ConfirmPassword)

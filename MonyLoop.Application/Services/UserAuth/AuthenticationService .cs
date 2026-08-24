@@ -43,7 +43,7 @@ namespace MonyLoop.Application.Services.UserAuth
                 UserName = email,
                 FirstName = request.FirstName.Trim(),
                 LastName = request.LastName.Trim(),
-                NationalId = NormalizeOptional(request.NationalId),
+                NationalId = request.NationalId.Trim(),
                 PhoneNumber = request.PhoneNumber.Trim(),
                 MustChangePassword = false,
                 EmailConfirmed = false,
@@ -295,7 +295,5 @@ namespace MonyLoop.Application.Services.UserAuth
             return Guid.TryParse(principal.FindFirstValue("uid"), out userId);
         }
 
-        private static string? NormalizeOptional(string? value) =>
-            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }
