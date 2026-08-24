@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Constants;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.API.Controllers.CircleRequestManagement;
 
-[Authorize(Roles = SystemRoles.Admin + "," + SystemRoles.CircleOrganizer)]
+[Authorize(Roles = ApplicationRole.Admin + "," + ApplicationRole.Organizer)]
 [Route("api/circles")]
 public sealed class CirclesController : ApiBaseController
 {

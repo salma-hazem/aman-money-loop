@@ -56,5 +56,37 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
             return await _dbcontext.MemberLedgers
                 .FirstOrDefaultAsync(x => x.UserId == userId, ct);
         }
+
+        public async Task<List<MemberLedger>> GetAllWithDetailsAsync(CancellationToken ct = default)
+        {
+            return await _dbcontext.MemberLedgers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Include(x => x.CircleSlot!)
+                    .ThenInclude(slot => slot.Circle!)
+                        .ThenInclude(circle => circle.CircleRequest)
+                .OrderByDescending(x => x.ActivatedAt)
+                .ToListAsync(ct);
+        }
+
+        public async Task<List<MemberLedger>> GetByOrganizerIdAsync(Guid organizerId,CancellationToken ct = default)
+        {
+            if (organizerId == Guid.Empty)
+                throw new ArgumentException("Invalid organizer ID", nameof(organizerId));
+
+            return await _dbcontext.MemberLedgers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Include(x => x.CircleSlot!)
+                    .ThenInclude(slot => slot.Circle!)
+                        .ThenInclude(circle => circle.CircleRequest)
+                .Where(x =>
+                    x.CircleSlot != null &&
+                    x.CircleSlot.Circle != null &&
+                    x.CircleSlot.Circle.CircleRequest != null &&
+                    x.CircleSlot.Circle.CircleRequest.CreatedByOrganizerId == organizerId)
+                .OrderByDescending(x => x.ActivatedAt)
+                .ToListAsync(ct);
+        }
     }
 }
