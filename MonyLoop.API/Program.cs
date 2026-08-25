@@ -169,6 +169,7 @@ namespace MonyLoop.API
             // ===== Module 3 - Membership Applications =====
             builder.Services.AddScoped<IMembershipApplicationRepository, MembershipApplicationRepository>();
             builder.Services.AddScoped<IMembershipApplicationService, MembershipApplicationService>();
+            builder.Services.AddScoped<IMarketplaceListingService, MarketplaceListingService>();
 
             // ===== Module 5 - Agreement & Payment =====
             builder.Services.AddScoped<IMembershipAgreementRepository, MembershipAgreementRepository>();

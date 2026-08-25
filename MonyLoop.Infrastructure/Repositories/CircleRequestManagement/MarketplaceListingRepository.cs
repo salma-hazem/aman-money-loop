@@ -51,10 +51,11 @@ public sealed class MarketplaceListingRepository
         CancellationToken cancellationToken = default)
     {
         return await _context.MarketplaceListings
-            .AsNoTracking()
-            .Include(listing => listing.Circle)
-            .Where(listing =>
-                listing.ListingStatus == MarketplaceListingStatus.Active)
+     .AsNoTracking()
+     .Include(listing => listing.Circle)
+         .ThenInclude(circle => circle!.CircleRequest)
+     .Where(listing =>
+         listing.ListingStatus == MarketplaceListingStatus.Active)
             .ToListAsync(cancellationToken);
     }
 
