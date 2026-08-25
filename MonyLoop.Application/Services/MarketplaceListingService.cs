@@ -15,13 +15,20 @@ public class MarketplaceListingService : IMarketplaceListingService
         _repository = repository;
     }
 
-    public async Task<Result<IReadOnlyList<MarketplaceListingSummaryDto>>> GetActiveListingsAsync()
+    public async Task<Result<IReadOnlyList<MarketplaceListingSummaryDto>>> GetActiveListingsAsync(MarketplaceListingQueryDto query)
     {
         var listings = await _repository.GetActiveAsync();
 
         var summaries = listings
             .Where(l => l.Circle is not null)
             .Select(ToSummaryDto)
+            .Where(s => string.IsNullOrWhiteSpace(query.Search) ||
+                s.Title.Contains(query.Search, StringComparison.OrdinalIgnoreCase))
+            .Where(s => query.MinContribution is null || s.MonthlyContribution >= query.MinContribution)
+            .Where(s => query.MaxContribution is null || s.MonthlyContribution <= query.MaxContribution)
+            .Where(s => query.MinDuration is null || s.DurationMonths >= query.MinDuration)
+            .Where(s => query.MaxDuration is null || s.DurationMonths <= query.MaxDuration)
+            .Where(s => query.MinAvailableSlots is null || s.AvailableSlots >= query.MinAvailableSlots)
             .ToList();
 
         return Result<IReadOnlyList<MarketplaceListingSummaryDto>>.Ok(summaries);
