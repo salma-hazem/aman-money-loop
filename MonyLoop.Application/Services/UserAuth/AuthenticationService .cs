@@ -12,6 +12,8 @@ namespace MonyLoop.Application.Services.UserAuth
 {
     public class AuthenticationService : IAuthenticationService
     {
+        private static readonly TimeSpan PendingRegistrationLifetime = TimeSpan.FromHours(24);
+
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOTPService _otpService;
@@ -34,7 +36,34 @@ namespace MonyLoop.Application.Services.UserAuth
             var email = request.Email.Trim();
             var existingUser = await _userManager.FindByEmailAsync(email);
             if (existingUser != null)
-                return Result<Guid>.Fail(Error.Validation("Auth.EmailExists", "This email address is already registered."));
+            {
+                if (existingUser.EmailConfirmed || !existingUser.IsActive)
+                {
+                    return Result<Guid>.Fail(Error.Validation(
+                        "Auth.EmailExists",
+                        "This email address is already registered."));
+                }
+
+                if (existingUser.CreatedAt > DateTime.UtcNow.Subtract(PendingRegistrationLifetime))
+                {
+                    var resendResult = await _otpService.GenerateAndSendAsync(
+                        existingUser.Id,
+                        existingUser.Email!,
+                        existingUser.FirstName,
+                        OTPPurpose.RegistrationConfirmation,
+                        ct);
+
+                    return resendResult.IsFailure
+                        ? Result<Guid>.Fail(resendResult.Errors.ToList())
+                        : Result<Guid>.Ok(existingUser.Id);
+                }
+
+                var deleteResult = await _userManager.DeleteAsync(existingUser);
+                if (!deleteResult.Succeeded)
+                {
+                    return Result<Guid>.Fail(deleteResult.ToValidationErrors());
+                }
+            }
 
             var user = new ApplicationUser
             {
