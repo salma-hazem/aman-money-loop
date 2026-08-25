@@ -13,11 +13,11 @@ namespace MonyLoop.API.Controllers
         {
             _service = service;
         }
-
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<MarketplaceListingSummaryDto>>> GetActive()
+        public async Task<ActionResult<IReadOnlyList<MarketplaceListingSummaryDto>>> GetActive(
+            [FromQuery] MarketplaceListingQueryDto query)
         {
-            var result = await _service.GetActiveListingsAsync();
+            var result = await _service.GetActiveListingsAsync(query);
             return HandleResult(result);
         }
 

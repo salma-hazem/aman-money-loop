@@ -35,3 +35,12 @@ public sealed class MarketplaceListingDetailDto
     public int FilledSlots { get; set; }
     public int AvailableSlots { get; set; }
 }
+public sealed class MarketplaceListingQueryDto
+{
+    public string? Search { get; set; }
+    public decimal? MinContribution { get; set; }
+    public decimal? MaxContribution { get; set; }
+    public int? MinDuration { get; set; }
+    public int? MaxDuration { get; set; }
+    public int? MinAvailableSlots { get; set; }
+}
