@@ -27,12 +27,12 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             if (requirements == null)
             {
-                return (Result<IEnumerable<DocumentRequirementResponseDto>>)Enumerable.Empty<DocumentRequirementResponseDto>();
+                return Result<IEnumerable<DocumentRequirementResponseDto>>.Ok(Enumerable.Empty<DocumentRequirementResponseDto>());
             }
 
             var responseDtos = _mapper.Map<IEnumerable<DocumentRequirementResponseDto>>(requirements);
 
-            return (Result<IEnumerable<DocumentRequirementResponseDto>>)responseDtos;
+            return Result<IEnumerable<DocumentRequirementResponseDto>>.Ok(responseDtos);
         }
 
         public async Task<Result<IEnumerable<DocumentRequirementResponseDto>>> GetRequiredOnlyAsync(CancellationToken ct = default)
@@ -41,12 +41,12 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             if (requirements == null)
             {
-                return (Result<IEnumerable<DocumentRequirementResponseDto>>)Enumerable.Empty<DocumentRequirementResponseDto>();
+                return Result<IEnumerable<DocumentRequirementResponseDto>>.Ok(Enumerable.Empty<DocumentRequirementResponseDto>());
             }
 
             var responseDtos = _mapper.Map<IEnumerable<DocumentRequirementResponseDto>>(requirements);
 
-            return (Result<IEnumerable<DocumentRequirementResponseDto>>)responseDtos;
+            return Result<IEnumerable<DocumentRequirementResponseDto>>.Ok(responseDtos);
         }
     }
 }
