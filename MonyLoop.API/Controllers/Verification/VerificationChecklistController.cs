@@ -9,6 +9,7 @@ namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
     [Route("api/verification-checklists")]
+    [Authorize]
     public class VerificationChecklistController : ControllerBase
     {
         private readonly IVerificationChecklistService _checklistService;
