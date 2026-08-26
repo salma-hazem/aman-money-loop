@@ -197,6 +197,13 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "The member ledger does not have an active assigned circle slot.");
             }
             await EnsurePaymentAccessAsync(memberLedger.MemberLedgerId,recordedByUserId,isAdmin);
+            var hasSuccessfulPayout =await _paymentTransactionRepository.HasSuccessfulPayoutAsync(memberLedger.MemberLedgerId);
+
+            if (hasSuccessfulPayout)
+            {
+                throw new InvalidOperationException(
+                    "A successful payout has already been recorded for this member.");
+            }
 
             if (!string.IsNullOrWhiteSpace(request.TransactionReference))
             {

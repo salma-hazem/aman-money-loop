@@ -20,6 +20,9 @@ namespace MonyLoop.Domain.Interfaces.AgreementPayment
             string transactionReference,
             CancellationToken cancellationToken = default);
 
+        Task<bool> HasSuccessfulPayoutAsync(
+            Guid memberLedgerId,
+            CancellationToken cancellationToken = default);
         Task AddAsync(
             PaymentTransaction paymentTransaction,
             CancellationToken cancellationToken = default);

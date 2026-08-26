@@ -2,6 +2,7 @@
 using MonyLoop.Domain.Entities.Agreement___Payment;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
 using MonyLoop.Infrastructure.Data;
+using MonyLoop.Domain.Constants.Agreement___Payment;
 
 namespace MonyLoop.Infrastructure.Repositories.AgreementPayment
 {
@@ -58,6 +59,18 @@ namespace MonyLoop.Infrastructure.Repositories.AgreementPayment
                     cancellationToken);
         }
 
+        public async Task<bool> HasSuccessfulPayoutAsync(
+    Guid memberLedgerId,
+    CancellationToken cancellationToken = default)
+        {
+            return await _context.PaymentTransactions
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.MemberLedgerId == memberLedgerId &&
+                         x.TransactionType == PaymentTransactionType.PayOut &&
+                         x.TransactionStatus == PaymentTransactionStatus.Successful,
+                    cancellationToken);
+        }
         public async Task AddAsync(
             PaymentTransaction paymentTransaction,
             CancellationToken cancellationToken = default)

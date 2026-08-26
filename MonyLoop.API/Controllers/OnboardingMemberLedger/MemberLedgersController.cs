@@ -32,11 +32,27 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
         }
 
 
-        [Authorize(Roles = $"{ApplicationRole.Member},{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
+        [Authorize(Roles = $"{ApplicationRole.Member},{ApplicationRole.Admin}")]
         [HttpGet("by-user/{userId:guid}")]
-        public async Task<ActionResult<MemberLedgerResponseDto>> GetByUserId(Guid userId, CancellationToken ct)
+        public async Task<ActionResult<MemberLedgerResponseDto>> GetByUserId(Guid userId,CancellationToken ct)
         {
-            var result = await _memberLedgerService.GetByUserIdAsync(userId, ct);
+            var uidClaim = User.FindFirst("uid")?.Value;
+
+            if (!Guid.TryParse(uidClaim, out var requesterId))
+            {
+                return Unauthorized();
+            }
+
+            var isAdmin = User.IsInRole(ApplicationRole.Admin);
+
+            if (!isAdmin && requesterId != userId)
+            {
+                return Forbid();
+            }
+
+            var result =
+                await _memberLedgerService.GetByUserIdAsync(userId, ct);
+
             return HandleResult(result);
         }
 
