@@ -10,5 +10,6 @@ namespace MonyLoop.Domain.Interfaces
         Task UpdateAsync(MembershipApplication application);
         Task<MembershipApplication?> GetByIdWithAgreementDetailsAsync(
             Guid membershipApplicationId);
+        Task<List<MembershipApplication>> GetByUserIdAsync(Guid userId);
     }
 }

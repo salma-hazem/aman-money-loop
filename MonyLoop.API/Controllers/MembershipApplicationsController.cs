@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.API.Authentication;
 using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs;
 using MonyLoop.Application.ServicesAbstractions;
@@ -19,6 +20,16 @@ namespace MonyLoop.API.Controllers
             [FromBody] CreateMembershipApplicationDto dto)
         {
             var result = await _service.CreateApplicationAsync(dto);
+            return HandleResult(result);
+        }
+        [Authorize]
+        [HttpGet("mine")]
+        public async Task<ActionResult<IReadOnlyList<MembershipApplicationDetailDto>>> GetMine()
+        {
+            if (!CurrentUserIdResolver.TryGet(User, out var userId))
+                return Unauthorized();
+
+            var result = await _service.GetMyApplicationsAsync(userId);
             return HandleResult(result);
         }
         [Authorize]

@@ -14,5 +14,6 @@ namespace MonyLoop.Application.ServicesAbstractions
             Guid membershipApplicationId);
         Task<Result<MembershipApplicationDetailDto>> RejectAsync(
             Guid membershipApplicationId);
+        Task<Result<IReadOnlyList<MembershipApplicationDetailDto>>> GetMyApplicationsAsync(Guid userId);
     }
 }
