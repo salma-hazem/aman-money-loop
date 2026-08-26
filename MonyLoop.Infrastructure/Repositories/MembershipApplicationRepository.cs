@@ -27,15 +27,12 @@ namespace MonyLoop.Infrastructure.Repositories
         {
             var query = _context.MembershipApplications
                 .Where(a => a.ListingId == listingId);
-
             var totalCount = await query.CountAsync();
-
             var items = await query
                 .OrderByDescending(a => a.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-
             return (items, totalCount);
         }
         public async Task UpdateAsync(MembershipApplication application)
@@ -52,6 +49,17 @@ namespace MonyLoop.Infrastructure.Repositories
                         .ThenInclude(c => c!.CircleRequest)
                 .FirstOrDefaultAsync(
                     a => a.MembershipApplicationId == membershipApplicationId);
+        }
+
+        public async Task<List<MembershipApplication>> GetByUserIdAsync(Guid userId)
+        {
+            return await _context.MembershipApplications
+                .Where(a => a.UserId == userId)
+                .Include(a => a.MarketplaceListing)
+                    .ThenInclude(l => l!.Circle)
+                        .ThenInclude(c => c!.CircleRequest)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
         }
     }
 }
