@@ -5,11 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.Verification;
 using MonyLoop.Application.ServicesAbstractions.Verification;
+using Microsoft.AspNetCore.Authorization;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
     [Route("api/verification-schedules")]
+    [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
     public class VerificationScheduleController : ControllerBase
     {
         private readonly IVerificationScheduleService _scheduleService;

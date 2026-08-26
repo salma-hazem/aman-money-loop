@@ -5,11 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.Verification;
 using MonyLoop.Application.ServicesAbstractions.Verification;
+using Microsoft.AspNetCore.Authorization;
+using MonyLoop.Domain.Entities.UserAuth;
 
 namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
     [Route("api/verification-rounds")]
+    [Authorize(Roles = $"{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
     public class VerificationRoundController : ControllerBase
     {
         private readonly IVerificationRoundService _roundService;
