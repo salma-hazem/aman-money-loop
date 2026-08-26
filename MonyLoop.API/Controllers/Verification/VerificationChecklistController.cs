@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.Verification;
 using MonyLoop.Application.ServicesAbstractions.Verification;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace MonyLoop.Api.Controllers.Verification
 {

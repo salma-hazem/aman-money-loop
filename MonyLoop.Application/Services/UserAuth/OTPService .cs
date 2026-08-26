@@ -12,6 +12,7 @@ public class OTPService : IOTPService
 {
     private const int ExpiryMinutes = 10;
     private const int MaxAttempts = 5;
+    private static readonly TimeSpan RequestCooldown = TimeSpan.FromSeconds(60);
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailSender _emailSender;
@@ -34,8 +35,8 @@ public class OTPService : IOTPService
         OTPPurpose purpose,
         CancellationToken ct = default)
     {
-        var cooldownKey = $"otp-request:{userId}:{purpose}";
-        if (!await _rateLimiter.IsAllowedAsync(cooldownKey, TimeSpan.FromSeconds(60)))
+        var cooldownKey = GetRequestCooldownKey(userId, purpose);
+        if (!await _rateLimiter.IsAllowedAsync(cooldownKey, RequestCooldown))
         {
             return Result.Fail(Error.Validation(
                 "OTP.RateLimited",
@@ -117,6 +118,11 @@ public class OTPService : IOTPService
 
         otp.IsUsed = true;
         await _unitOfWork.SaveChangesAsync(ct);
+        await _rateLimiter.ResetAsync(GetRequestCooldownKey(userId, purpose));
+
         return Result.Ok();
     }
+
+    private static string GetRequestCooldownKey(Guid userId, OTPPurpose purpose) =>
+        $"otp-request:{userId}:{purpose}";
 }
