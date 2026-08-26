@@ -38,3 +38,4 @@ namespace MonyLoop.Application.Services
             if (File.Exists(fullPath)) File.Delete(fullPath);
         }
     }
+}
