@@ -10,6 +10,7 @@ namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
     [Route("api/verification-rounds")]
+    [Authorize]
     public class VerificationRoundController : ControllerBase
     {
         private readonly IVerificationRoundService _roundService;
