@@ -21,5 +21,8 @@ namespace MonyLoop.Domain.Interfaces.OnboardingMemberLedger
 
         Task<(IReadOnlyList<OnboardingCase> Items, int TotalCount)> GetByStatusPagedAsync(
             OnboardingCaseStatus status, int pageNumber, int pageSize, CancellationToken ct = default);
+
+        Task<OnboardingCase?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
+
     }
 }

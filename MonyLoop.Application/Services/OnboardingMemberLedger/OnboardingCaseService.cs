@@ -132,7 +132,19 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             return (Result<IEnumerable<OnboardingCaseResponseDto>>)responseDtos;
         }
 
+        public async Task<Result<OnboardingCaseResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+            if (userId == Guid.Empty)
+                return Result<OnboardingCaseResponseDto>.Fail(Error.Validation("OnboardingCase.InvalidUser", "The provided user ID is invalid."));
 
+            var onboardingCase = await _unitOfWork.OnboardingCases.GetByUserIdAsync(userId, ct);
+
+            if (onboardingCase == null)
+                return Result<OnboardingCaseResponseDto>.Fail(Error.NotFound("OnboardingCase.NotFound", "No onboarding case was found for the current user."));
+
+            var responseDto = _mapper.Map<OnboardingCaseResponseDto>(onboardingCase);
+            return (Result<OnboardingCaseResponseDto>)responseDto;
+        }
 
         public async Task<Result> MarkActivatedAsync(Guid onboardingCaseId, Guid activatedByAdminId, CancellationToken ct = default)
         {

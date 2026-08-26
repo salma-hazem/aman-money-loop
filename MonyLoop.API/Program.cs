@@ -199,6 +199,9 @@ namespace MonyLoop.API
             builder.Services.AddScoped<IOnboardingCaseService, OnboardingCaseService>();
             builder.Services.AddScoped<IMemberLedgerService, MemberLedgerService>();
 
+            // storage service for file uploads
+            builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+
             //===== Data Seeding =====
             builder.Services.AddScoped<IDataInitializer, IdentityDataInitializer>();
 
@@ -212,7 +215,7 @@ namespace MonyLoop.API
                 .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddHangfireServer();
 
-            
+
 
             // ===== Identity =====
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>

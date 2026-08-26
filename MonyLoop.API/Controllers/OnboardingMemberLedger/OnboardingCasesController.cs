@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MonyLoop.API.Authentication;
 using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
@@ -29,6 +30,16 @@ namespace MonyLoop.API.Controllers.OnboardingMemberLedger
             return HandleResult(result);
         }
 
+        [Authorize(Roles = ApplicationRole.Member)]
+        [HttpGet("my-case")]
+        public async Task<ActionResult<OnboardingCaseResponseDto>> GetMyCase(CancellationToken ct)
+        {
+            if (!CurrentUserIdResolver.TryGet(User, out var userId))
+                return Unauthorized();
+
+            var result = await _onboardingCaseService.GetByUserIdAsync(userId, ct);
+            return HandleResult(result);
+        }
 
         [Authorize(Roles = $"{ApplicationRole.Member},{ApplicationRole.Admin},{ApplicationRole.Organizer}")]
         [HttpGet("{id:guid}")]

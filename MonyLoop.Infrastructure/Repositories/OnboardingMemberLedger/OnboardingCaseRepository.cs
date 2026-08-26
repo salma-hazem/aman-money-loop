@@ -85,5 +85,18 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
             var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct);
             return (items, totalCount);
         }
+
+        public async Task<OnboardingCase?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+
+            if (userId == Guid.Empty)
+                throw new ArgumentException("Invalid user ID", nameof(userId));
+
+            return await _dbcontext.OnboardingCases
+                .AsNoTracking()
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+        }
     }
 }

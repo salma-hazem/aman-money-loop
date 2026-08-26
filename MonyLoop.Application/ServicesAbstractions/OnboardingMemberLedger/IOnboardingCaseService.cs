@@ -20,5 +20,6 @@ namespace MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger
         Task<Result> RecalculateAndUpdateStatusAsync(Guid onboardingCaseId, CancellationToken ct = default);
         Task<Result> MarkActivatedAsync(Guid onboardingCaseId, Guid activatedByAdminId, CancellationToken ct = default);
 
+        Task<Result<OnboardingCaseResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     }
 }
