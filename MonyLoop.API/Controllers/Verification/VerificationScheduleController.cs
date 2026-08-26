@@ -10,6 +10,7 @@ namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
     [Route("api/verification-schedules")]
+    [Authorize]
     public class VerificationScheduleController : ControllerBase
     {
         private readonly IVerificationScheduleService _scheduleService;
