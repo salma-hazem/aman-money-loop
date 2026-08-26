@@ -41,5 +41,11 @@ namespace MonyLoop.Infrastructure.Services.UserAuth
 
             return count <= limit;
         }
+
+        public async Task ResetAsync(string key)
+        {
+            var db = _redis.GetDatabase();
+            await db.KeyDeleteAsync(key);
+        }
     }
 }

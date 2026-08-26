@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MonyLoop.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MonyLoop.Infrastructure.Data;
 namespace MonyLoop.Infrastructure.Data.MigrationsV2
 {
     [DbContext(typeof(MonyLoopDbContext))]
-    partial class MonyLoopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826110419_check migration")]
+    partial class checkmigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

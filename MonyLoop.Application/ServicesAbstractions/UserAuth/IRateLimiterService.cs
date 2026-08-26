@@ -10,5 +10,6 @@ namespace MonyLoop.Application.ServicesAbstractions.UserAuth
     {
         Task<bool> IsAllowedAsync(string key, TimeSpan window);
         Task<bool> IsWithinLimitAsync(string key, int limit, TimeSpan window);
+        Task ResetAsync(string key);
     }
 }
