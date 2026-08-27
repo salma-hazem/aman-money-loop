@@ -3,10 +3,12 @@ using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.Onboarding___Member_Ledger;
+using MonyLoop.Domain.Constants.Onboarding___Member_Ledger;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
 using MonyLoop.Domain.Constants.Agreement___Payment;
+using MonyLoop.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,6 +84,35 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
                         "The onboarding case was not found."));
             }
 
+            if (onboardingCase.UserId != request.UserId)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.OnboardingUserMismatch",
+                        "The onboarding case does not belong to the provided user."));
+            }
+
+            var allDocumentsVerified =
+                await _unitOfWork.Documents.AllRequiredDocumentsVerifiedAsync(
+                    request.OnboardingCaseId,
+                    ct);
+
+            if (!allDocumentsVerified)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.DocumentsNotVerified",
+                        "All required documents must be uploaded and verified before activation."));
+            }
+
+            if (onboardingCase.FinalStatus != OnboardingCaseStatus.Approved)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.OnboardingNotApproved",
+                        "The onboarding case must be approved before activating the member ledger."));
+            }
+
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(
                     onboardingCase.MembershipAgreementId,
@@ -134,7 +165,28 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
                         "Circle.NotFound",
                         "The circle related to this membership agreement was not found."));
             }
+            var linkedRequest = circle.CircleRequest;
 
+            if (linkedRequest is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "CircleRequest.NotFound",
+                        "The circle request linked to this circle was not found."));
+            }
+
+            var existingLedgerForCase =
+    await _unitOfWork.MemberLedgers.GetByOnboardingCaseIdAsync(
+        request.OnboardingCaseId,
+        ct);
+
+            if (existingLedgerForCase != null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Failure(
+                        "MemberLedger.OnboardingAlreadyActivated",
+                        "This onboarding case has already been activated."));
+            }
             var alreadyExists =
                 await _unitOfWork.MemberLedgers.ExistsForUserAsync(
                     request.UserId,
@@ -181,16 +233,18 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             }
 
             var updateStatusResult =
-                await _onboardingCaseService.MarkActivatedAsync(
-                    request.OnboardingCaseId,
-                    activatedByAdminId,
-                    ct);
+    await _onboardingCaseService.MarkActivatedAsync(
+        request.OnboardingCaseId,
+        activatedByAdminId,
+        ct);
 
             if (updateStatusResult.IsFailure)
             {
                 return Result<MemberLedgerResponseDto>.Fail(
                     updateStatusResult.Errors.ToList());
             }
+
+            linkedRequest.RequestStatus = CircleRequestStatus.Fulfilled;
 
             await _unitOfWork.SaveChangesAsync(ct);
 

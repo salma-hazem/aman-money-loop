@@ -15,5 +15,7 @@ namespace MonyLoop.Application.DTOs.OnboardingMemberLedger
         public Guid OrganizerId { get; set; }
         public string FinalStatus { get; set; } = String.Empty;
         public DateTime CreatedAt { get; set; }
+
+        public List<DocumentResponseDto> Documents { get; set; } = [];
     }
 }

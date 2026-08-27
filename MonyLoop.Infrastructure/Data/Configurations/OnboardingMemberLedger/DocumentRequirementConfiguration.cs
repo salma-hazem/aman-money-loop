@@ -41,6 +41,16 @@ namespace MonyLoop.Infrastructure.Data.Configurations.OnboardingMemberLedger
                 .WithOne(x => x.DocumentRequirement)
                 .HasForeignKey(x => x.DocumentRequirementId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasData(new DocumentRequirement
+            {
+                DocumentRequirementId = new Guid("8F6A0F13-55F6-4D7E-B560-5C0D0C428A01"),
+                DocumentName = "National ID Copy",
+                Description = "Clear copy of the member's National ID.",
+                IsRequired = true,
+                IsActive = true,
+                DisplayOrder = 1
+            });
         }
     }
 }

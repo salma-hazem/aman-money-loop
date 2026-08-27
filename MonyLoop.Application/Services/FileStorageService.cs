@@ -32,6 +32,19 @@ namespace MonyLoop.Application.Services
             return Path.Combine(subFolder, fileName).Replace("\\", "/");
         }
 
+        public Stream? OpenRead(string filePath)
+        {
+            var root = Path.GetFullPath(_rootPath);
+            var fullPath = Path.GetFullPath(Path.Combine(root, filePath.Replace('/', Path.DirectorySeparatorChar)));
+
+            if (!fullPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            if (!File.Exists(fullPath))
+                return null;
+
+            return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
         public void Delete(string filePath)
         {
             var fullPath = Path.Combine(_rootPath, filePath);

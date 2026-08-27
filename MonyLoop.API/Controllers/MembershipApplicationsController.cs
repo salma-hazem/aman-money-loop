@@ -17,11 +17,24 @@ namespace MonyLoop.API.Controllers
         // FR10: Marketplace is public — guests and registered members can apply, no login required.
         [HttpPost]
         public async Task<ActionResult<MembershipApplicationDetailDto>> Create(
-            [FromBody] CreateMembershipApplicationDto dto)
+    [FromBody] CreateMembershipApplicationDto dto)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (!CurrentUserIdResolver.TryGet(User, out var userId))
+                    return Unauthorized();
+
+                dto.UserId = userId;
+            }
+            else
+            {
+                dto.UserId = null;
+            }
+
             var result = await _service.CreateApplicationAsync(dto);
             return HandleResult(result);
         }
+
         [Authorize]
         [HttpGet("mine")]
         public async Task<ActionResult<IReadOnlyList<MembershipApplicationDetailDto>>> GetMine()
