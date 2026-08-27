@@ -6,6 +6,7 @@ using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Entities.UserAuth;
 using MonyLoop.Infrastructure.Services.Email;
 using MonyLoop.Infrastructure.Services.Email.Models;
+using System.Globalization;
 
 namespace MonyLoop.Infrastructure.Notifications;
 
@@ -52,11 +53,12 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
                     SubmittedAt = request.SubmittedAt ?? request.CreatedAt
                 };
 
+                var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
                 await TryRenderAndSendAsync(
-                    "CircleRequestSubmittedEmail",
+                    isArabic ? "CircleRequestSubmittedEmail.ar" : "CircleRequestSubmittedEmail",
                     model,
                     admin.Email!,
-                    "Circle request submitted",
+                    isArabic ? "تم إرسال طلب جمعية" : "Circle request submitted",
                     request.RequestId,
                     cancellationToken);
             }
@@ -90,11 +92,12 @@ public sealed class CircleRequestNotificationService : ICircleRequestNotificatio
                 ReviewedAt = request.ReviewedAt ?? request.SubmittedAt ?? request.CreatedAt
             };
 
+            var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
             await TryRenderAndSendAsync(
-                "CircleRequestDecisionEmail",
+                isArabic ? "CircleRequestDecisionEmail.ar" : "CircleRequestDecisionEmail",
                 model,
                 organizer.Email,
-                $"Circle request {request.RequestStatus}",
+                isArabic ? "تم تسجيل قرار طلب الجمعية" : $"Circle request {request.RequestStatus}",
                 request.RequestId,
                 cancellationToken);
         }

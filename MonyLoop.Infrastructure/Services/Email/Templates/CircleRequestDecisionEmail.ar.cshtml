@@ -1,0 +1,18 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.CircleRequestDecisionEmailModel
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "قرار طلب الجمعية";
+    ViewBag.IsRtl = true;
+}
+<h2>مرحبًا @Model.OrganizerName،</h2>
+<p>تم تسجيل قرار بشأن طلب الجمعية الخاص بك.</p>
+<div class="info-box">
+    <p><strong>الجمعية</strong><br />@Model.CircleTitle</p>
+    <p><strong>الحالة</strong><br />@Model.RequestStatus</p>
+    <p><strong>رقم الطلب</strong><br /><span dir="ltr">@Model.RequestId</span></p>
+    <p><strong>وقت المراجعة</strong><br />@Model.ReviewedAt.ToString("u") UTC</p>
+</div>
+@if (!string.IsNullOrWhiteSpace(Model.DecisionReason))
+{
+    <p><strong>السبب</strong></p><p>@Model.DecisionReason</p>
+}

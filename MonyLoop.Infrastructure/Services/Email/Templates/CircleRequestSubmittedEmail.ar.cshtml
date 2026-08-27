@@ -1,0 +1,15 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.CircleRequestSubmittedEmailModel
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "تم إرسال طلب جمعية";
+    ViewBag.IsRtl = true;
+}
+<h2>مرحبًا @Model.RecipientName،</h2>
+<p>تم إرسال طلب جمعية وهو جاهز لمراجعة المسؤول.</p>
+<div class="info-box">
+    <p><strong>الجمعية</strong><br />@Model.CircleTitle</p>
+    <p><strong>نوع الطلب</strong><br />@Model.CircleType</p>
+    <p><strong>رقم الطلب</strong><br /><span dir="ltr">@Model.RequestId</span></p>
+    <p><strong>وقت الإرسال</strong><br />@Model.SubmittedAt.ToString("u") UTC</p>
+</div>
+<p>يرجى فتح قائمة الموافقات لمراجعة الطلب.</p>

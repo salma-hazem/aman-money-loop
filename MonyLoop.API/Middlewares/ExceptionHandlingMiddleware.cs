@@ -2,6 +2,7 @@
 using MonyLoop.Application.Exceptions;
 using System.Net;
 using System.Text.Json;
+using MonyLoop.API.Localization;
 
 namespace MonyLoop.API.Middlewares
 {
@@ -31,8 +32,8 @@ namespace MonyLoop.API.Middlewares
 
                 var problem = new ProblemDetails
                 {
-                    Title = "Error while processing the HTTP request",
-                    Detail = _env.IsDevelopment() ? ex.Message : "Please contact support if the problem persists.",
+                    Title = ApiText.Translate("Error while processing the HTTP request"),
+                    Detail = _env.IsDevelopment() ? ApiText.Translate(ex.Message) : ApiText.Translate("Please contact support if the problem persists."),
                     Instance = httpContext.Request.Path,
                     Status = ex switch
                     {
@@ -54,8 +55,8 @@ namespace MonyLoop.API.Middlewares
             {
                 var problem = new ProblemDetails
                 {
-                    Title = "Error while processing the HTTP request - Endpoint Not Found",
-                    Detail = $"Endpoint {httpContext.Request.Path} was not found.",
+                    Title = ApiText.Translate("Error while processing the HTTP request - Endpoint Not Found"),
+                    Detail = ApiText.EndpointNotFound(httpContext.Request.Path),
                     Status = StatusCodes.Status404NotFound,
                     Instance = httpContext.Request.Path
                 };

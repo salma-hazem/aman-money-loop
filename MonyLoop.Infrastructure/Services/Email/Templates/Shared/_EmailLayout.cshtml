@@ -1,9 +1,10 @@
 @{
     var title = ViewBag.Title as string ?? "Aman Money Loop";
+    var isRtl = ViewBag.IsRtl is bool rtl && rtl;
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@(isRtl ? "ar" : "en")" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +18,8 @@
             background: #F0F6F9;
             font-family: "Segoe UI", Arial, sans-serif;
             color: #002A47;
+            direction: @(isRtl ? "rtl" : "ltr");
+            text-align: @(isRtl ? "right" : "left");
         }
 
         .wrapper {
