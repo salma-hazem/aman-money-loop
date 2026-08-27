@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MonyLoop.Application.DTOs.Verification;
 using MonyLoop.Application.ServicesAbstractions.Verification;
-using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Constants.Verification;
 using MonyLoop.Domain.Entities.Verification;
 using MonyLoop.Domain.Interfaces;
@@ -43,7 +42,7 @@ namespace MonyLoop.Application.Services.Verification
 
         public async Task<VerificationChecklistSubmissionResponseDto> SubmitChecklistAsync(CreateVerificationChecklistSubmissionDto dto, CancellationToken ct = default)
         {
-            // Calculate Weighted Composite Score automatically (1-5 scale)
+            // Validate completeness, duplicates, and correct round criteria + calculate score
             decimal compositeScore = await CalculateWeightedCompositeScoreAsync(dto.VerificationScheduleId, dto, ct);
 
             var submission = new VerificationChecklistSubmission
@@ -103,18 +102,38 @@ namespace MonyLoop.Application.Services.Verification
 
             if (!activeCriteriaList.Any()) return 0;
 
+            // 1. Reject empty ratings list
+            if (dto.Ratings == null || !dto.Ratings.Any())
+            {
+                throw new InvalidOperationException("Checklist submission must contain ratings for all active criteria.");
+            }
+
+            var submittedCriterionIds = dto.Ratings.Select(r => r.VerificationCriterionId).ToList();
+
+            // 2. Reject duplicate criteria entries
+            if (submittedCriterionIds.Count != submittedCriterionIds.Distinct().Count())
+            {
+                throw new InvalidOperationException("Duplicate criterion ratings are not allowed.");
+            }
+
+            // 3. Reject criteria that do not belong to this active round
+            var activeCriterionMap = activeCriteriaList.ToDictionary(c => c.VerificationCriterionId);
+            if (submittedCriterionIds.Any(id => !activeCriterionMap.ContainsKey(id)))
+            {
+                throw new InvalidOperationException("One or more criteria do not belong to the active round for this schedule.");
+            }
+
+            // 4. Reject incomplete submissions (unanswered active criteria or invalid ratings <= 0)
+            if (submittedCriterionIds.Count != activeCriteriaList.Count || dto.Ratings.Any(r => r.Rating < 1 || r.Rating > 5))
+            {
+                throw new InvalidOperationException("All active round criteria must be rated between 1 and 5.");
+            }
+
+            // 5. Calculate composite weighted score
             decimal totalWeight = activeCriteriaList.Sum(c => c.Weight);
             if (totalWeight == 0) return 0;
 
-            decimal weightedSum = 0;
-            foreach (var ratingDto in dto.Ratings)
-            {
-                var criterion = activeCriteriaList.FirstOrDefault(c => c.VerificationCriterionId == ratingDto.VerificationCriterionId);
-                if (criterion != null)
-                {
-                    weightedSum += ratingDto.Rating * criterion.Weight;
-                }
-            }
+            decimal weightedSum = dto.Ratings.Sum(ratingDto => ratingDto.Rating * activeCriterionMap[ratingDto.VerificationCriterionId].Weight);
 
             return Math.Round(weightedSum / totalWeight, 2);
         }

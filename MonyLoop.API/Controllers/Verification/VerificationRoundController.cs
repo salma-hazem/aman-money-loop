@@ -8,7 +8,6 @@ using MonyLoop.Application.ServicesAbstractions.Verification;
 using Microsoft.AspNetCore.Authorization;
 using MonyLoop.Domain.Entities.UserAuth;
 
-
 namespace MonyLoop.Api.Controllers.Verification
 {
     [ApiController]
@@ -47,6 +46,18 @@ namespace MonyLoop.Api.Controllers.Verification
         {
             var rounds = await _roundService.GetRoundsByCircleIdAsync(circleId, ct);
             return Ok(rounds);
+        }
+
+        [HttpPut("{id:guid}")]
+        public async Task<ActionResult<VerificationRoundResponseDto>> UpdateRound([FromRoute] Guid id, [FromBody] UpdateVerificationRoundDto dto, CancellationToken ct)
+        {
+            var updatedRound = await _roundService.UpdateRoundAsync(id, dto, ct);
+            if (updatedRound == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(updatedRound);
         }
     }
 }

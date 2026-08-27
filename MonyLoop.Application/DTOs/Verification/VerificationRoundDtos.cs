@@ -39,4 +39,19 @@ namespace MonyLoop.Application.DTOs.Verification
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; }
     }
+    public class UpdateVerificationRoundDto
+    {
+        public string RoundName { get; set; } = string.Empty;
+        public VerificationFormat Format { get; set; }
+        public List<UpdateVerificationCriterionDto> Criteria { get; set; } = new();
+    }
+
+    public class UpdateVerificationCriterionDto
+    {
+        public Guid? VerificationCriterionId { get; set; } // Nullable: populated for existing rows, null for new ones
+        public string CriterionName { get; set; } = string.Empty;
+        public decimal Weight { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
 }

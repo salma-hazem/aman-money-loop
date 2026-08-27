@@ -84,6 +84,34 @@ namespace MonyLoop.Application.Services.Verification
             return result;
         }
 
+        public async Task<VerificationRoundResponseDto?> UpdateRoundAsync(Guid verificationRoundId, UpdateVerificationRoundDto dto, CancellationToken ct = default)
+        {
+            var existingRound = await _roundRepository.GetVerificationRoundByIdAsync(verificationRoundId, ct);
+            if (existingRound == null) return null;
+
+            existingRound.RoundName = dto.RoundName;
+            existingRound.Format = dto.Format;
+            if (dto.ReviewedByUserId != null)
+            {
+                existingRound.ReviewedByUserId = dto.ReviewedByUserId;
+            }
+
+            existingRound.Criteria = dto.Criteria.Select(c => new VerificationCriterion
+            {
+                VerificationCriterionId = c.VerificationCriterionId ?? Guid.NewGuid(),
+                VerificationRoundId = verificationRoundId,
+                CriterionName = c.CriterionName,
+                Weight = c.Weight,
+                DisplayOrder = c.DisplayOrder,
+                IsActive = c.IsActive
+            }).ToList();
+
+            await _roundRepository.UpdateByIdAsync(verificationRoundId, existingRound, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return await GetRoundByIdAsync(verificationRoundId, ct);
+        }
+
         private static VerificationRoundResponseDto MapToRoundDto(VerificationRound round, IEnumerable<VerificationCriterion> criteria)
         {
             return new VerificationRoundResponseDto
