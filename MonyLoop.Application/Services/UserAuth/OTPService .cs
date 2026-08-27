@@ -12,17 +12,20 @@ public class OTPService : IOTPService
 {
     private const int ExpiryMinutes = 10;
     private const int MaxAttempts = 5;
+    private static readonly TimeSpan RequestCooldown = TimeSpan.FromSeconds(60);
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailSender _emailSender;
+    private readonly IRateLimiterService _rateLimiter;
 
     public OTPService(
         IUnitOfWork unitOfWork,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IRateLimiterService rateLimiter)
     {
         _unitOfWork = unitOfWork;
         _emailSender = emailSender;
-       
+        _rateLimiter = rateLimiter;
     }
 
     public async Task<Result> GenerateAndSendAsync(
@@ -32,11 +35,19 @@ public class OTPService : IOTPService
         OTPPurpose purpose,
         CancellationToken ct = default)
     {
-        
+        var cooldownKey = GetRequestCooldownKey(userId, purpose);
+
+        if (!await _rateLimiter.IsAllowedAsync(cooldownKey, RequestCooldown))
+        {
+            return Result.Fail(Error.Validation(
+                "OTP.RateLimited",
+                "Please wait before requesting another OTP."));
+        }
 
         await _unitOfWork.OTPTokens.InvalidateExistingTokensAsync(userId, purpose, ct);
 
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+
         var otp = new OTPToken
         {
             OTPTokenId = Guid.NewGuid(),
@@ -69,6 +80,7 @@ public class OTPService : IOTPService
         CancellationToken ct = default)
     {
         var otp = await _unitOfWork.OTPTokens.GetLatestActiveAsync(userId, purpose, ct);
+
         if (otp is null)
         {
             return Result.Fail(Error.NotFound(
@@ -110,7 +122,14 @@ public class OTPService : IOTPService
         otp.IsUsed = true;
         await _unitOfWork.SaveChangesAsync(ct);
 
+        await _rateLimiter.ResetAsync(
+            GetRequestCooldownKey(userId, purpose));
+
         return Result.Ok();
     }
 
+    private static string GetRequestCooldownKey(
+        Guid userId,
+        OTPPurpose purpose) =>
+        $"otp-request:{userId}:{purpose}";
 }
