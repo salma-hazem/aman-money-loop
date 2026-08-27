@@ -39,9 +39,60 @@ namespace MonyLoop.Application.Services.Verification
             _applicationRepository = applicationRepository;
             _unitOfWork = unitOfWork;
         }
+        public async Task<ApplicationVerificationSummaryDto?> GetApplicationConsolidatedSummaryAsync(Guid applicationId, CancellationToken ct = default)
+        {
+            // 1. Get all schedules for the application
+            var schedules = await _scheduleRepository.GetByApplicationIdAsync(applicationId, ct);
+            if (schedules == null || !schedules.Any()) return null;
 
+            var roundSummaries = new List<VerificationConsolidatedResultDto>();
+
+            foreach (var schedule in schedules)
+            {
+                var submission = await _submissionRepository.GetByVerificationScheduleIdAsync(schedule.VerificationScheduleId, ct);
+                if (submission == null) continue;
+
+                var round = await _roundRepository.GetVerificationRoundByIdAsync(schedule.VerificationRoundId, ct);
+                var ratings = await _ratingRepository.GetBySubmissionIdAsync(submission.VerificationChecklistSubmissionId, ct);
+
+                roundSummaries.Add(new VerificationConsolidatedResultDto
+                {
+                    VerificationScheduleId = schedule.VerificationScheduleId,
+                    ApplicationId = schedule.ApplicationId,
+                    RoundName = round?.RoundName ?? "Unknown Round",
+                    CompositeScore = submission.CompositeScore,
+                    OverallComments = submission.OverallComments,
+                    SubmittedAt = submission.SubmittedAt,
+                    DetailedRatings = ratings.Select(r => new VerificationCriterionRatingResponseDto
+                    {
+                        VerificationCriterionRatingId = r.VerificationCriterionRatingId,
+                        VerificationChecklistSubmissionId = r.VerificationChecklistSubmissionId,
+                        VerificationCriterionId = r.VerificationCriterionId,
+                        Rating = r.Rating,
+                        Comments = r.Comments
+                    }).ToList()
+                });
+            }
+
+            if (!roundSummaries.Any()) return null;
+
+            // 2. Return aggregated result across all completed rounds
+            return new ApplicationVerificationSummaryDto
+            {
+                ApplicationId = applicationId,
+                TotalRoundsCompleted = roundSummaries.Count,
+                OverallAverageScore = Math.Round(roundSummaries.Average(r => r.CompositeScore), 2),
+                RoundResults = roundSummaries
+            };
+        }
         public async Task<VerificationChecklistSubmissionResponseDto> SubmitChecklistAsync(CreateVerificationChecklistSubmissionDto dto, CancellationToken ct = default)
         {
+            // Verify authenticated reviewer identity is present
+            if (dto.SubmittedByUserId == Guid.Empty)
+            {
+                throw new UnauthorizedAccessException("Unidentified reviewer: User ID is missing.");
+            }
+
             // Validate completeness, duplicates, and correct round criteria + calculate score
             decimal compositeScore = await CalculateWeightedCompositeScoreAsync(dto.VerificationScheduleId, dto, ct);
 

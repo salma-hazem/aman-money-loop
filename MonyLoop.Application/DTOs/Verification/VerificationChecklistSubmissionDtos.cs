@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace MonyLoop.Application.DTOs.Verification
 {
+    public class ApplicationVerificationSummaryDto
+    {
+        public Guid ApplicationId { get; set; }
+        public int TotalRoundsCompleted { get; set; }
+        public decimal OverallAverageScore { get; set; }
+        public List<VerificationConsolidatedResultDto> RoundResults { get; set; } = new();
+    }
     public class CreateVerificationChecklistSubmissionDto
     {
         public Guid VerificationScheduleId { get; set; }
