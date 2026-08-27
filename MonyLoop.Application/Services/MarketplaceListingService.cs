@@ -1,8 +1,10 @@
 ﻿using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs.CircleRequestManagement;
 using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 using MonyLoop.Domain.Interfaces.CircleRequestManagement;
+
 
 namespace MonyLoop.Application.Services;
 
@@ -40,6 +42,19 @@ public class MarketplaceListingService : IMarketplaceListingService
 
         if (listing is null || listing.Circle is null)
             return Error.NotFound("MarketplaceListing.NotFound", "Listing not found.");
+
+        return ToDetailDto(listing);
+    }
+    public async Task<Result<MarketplaceListingDetailDto>> UpdateStatusAsync(Guid listingId, MarketplaceListingStatus status)
+    {
+        var listing = await _repository.GetDetailsByIdAsync(listingId);
+
+        if (listing is null || listing.Circle is null)
+            return Error.NotFound("MarketplaceListing.NotFound", "Listing not found.");
+
+        listing.ListingStatus = status;
+
+        await _repository.UpdateAsync(listing);
 
         return ToDetailDto(listing);
     }

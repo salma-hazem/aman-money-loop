@@ -60,11 +60,19 @@ public sealed class MarketplaceListingRepository
     }
 
     public Task AddAsync(
-        MarketplaceListing listing,
-        CancellationToken cancellationToken = default)
+    MarketplaceListing listing,
+    CancellationToken cancellationToken = default)
     {
         return _context.MarketplaceListings
             .AddAsync(listing, cancellationToken)
             .AsTask();
+    }
+
+    public async Task UpdateAsync(
+        MarketplaceListing listing,
+        CancellationToken cancellationToken = default)
+    {
+        _context.MarketplaceListings.Update(listing);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
