@@ -41,7 +41,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
         IOnboardingCaseService onboardingCaseService,
         ICircleSlotRepository circleSlotRepository,
         UserManager<ApplicationUser> userManager,
-        ILogger<MembershipAgreementService> logger,     
+        ILogger<MembershipAgreementService> logger,
         IEmailSender emailSender,
         IConfiguration configuration,
         IUnitOfWork unitOfWork,
@@ -60,7 +60,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
         }
 
         public async Task<MembershipAgreementResponse> CreateAgreementAsync(
-                 CreateMembershipAgreementRequest request,Guid organizerId)
+                 CreateMembershipAgreementRequest request, Guid organizerId)
         {
             var application =
                 await _membershipApplicationRepository
@@ -78,7 +78,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "An agreement can only be generated for a member who has completed verification and has been selected.");
             }
 
-            var agreementAlreadyExists =await _membershipAgreementRepository
+            var agreementAlreadyExists = await _membershipAgreementRepository
                     .ExistsForMembershipApplicationAsync(
                         request.MembershipApplicationId);
 
@@ -88,7 +88,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "A membership agreement already exists for this application.");
             }
 
-            var today =DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             if (request.ExpiryDate <= today)
             {
                 throw new ArgumentException(
@@ -128,11 +128,11 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "Payout slot must be greater than zero.");
             }
 
-            var payoutSlot =await _circleSlotRepository.GetByCircleAndSlotNumberAsync(circle.CircleId,request.PayoutSlot);
+            var payoutSlot = await _circleSlotRepository.GetByCircleAndSlotNumberAsync(circle.CircleId, request.PayoutSlot);
 
             if (payoutSlot is null)
             {
-                throw new ArgumentException( "The selected payout slot does not exist for this circle.");
+                throw new ArgumentException("The selected payout slot does not exist for this circle.");
             }
 
             if (payoutSlot.Status != CircleSlotStatus.Vacant ||
@@ -153,10 +153,10 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 ExpiryDate = request.ExpiryDate,
                 Status = AgreementStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
-                ResponseTokenHash =HashResponseToken(responseToken),
+                ResponseTokenHash = HashResponseToken(responseToken),
                 RespondedAt = null
             };
-            await _membershipAgreementRepository .AddAsync(agreement);
+            await _membershipAgreementRepository.AddAsync(agreement);
             application.Stage = MembershipApplicationStage.AgreementExtended;
             await _unitOfWork.SaveChangesAsync();
             var frontendBaseUrl =
@@ -200,14 +200,14 @@ namespace MonyLoop.Application.Services.AgreementPayment
             <p>Regards,<br/>MonyLoop Team</p>
             """;
 
-                    await _emailSender.SendEmailAsync(
-                        application.Email,
-                        "Membership Agreement Ready for Review",
-                        emailBody);
+            await _emailSender.SendEmailAsync(
+                application.Email,
+                "Membership Agreement Ready for Review",
+                emailBody);
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id,Guid requesterId,
+        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id, Guid requesterId,
     bool isAdmin)
         {
             var agreement =
@@ -255,14 +255,14 @@ namespace MonyLoop.Application.Services.AgreementPayment
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync( Guid id, string token)
+        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id, string token)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
 
             if (agreement is null)
                 return null;
-            if (!IsResponseTokenValid( token, agreement.ResponseTokenHash))
+            if (!IsResponseTokenValid(token, agreement.ResponseTokenHash))
             {
                 throw new UnauthorizedAccessException(
                     "The agreement response link is invalid.");
@@ -307,6 +307,13 @@ namespace MonyLoop.Application.Services.AgreementPayment
                     "The organizer for this agreement could not be determined.");
             }
 
+            // ✅ التصليح: لازم يكون فيه UserId مرتبط بالـ Application قبل ما نكمل
+            if (application.UserId is null || application.UserId == Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create an onboarding case because the membership application has no linked user account.");
+            }
+
             // Accept agreement
             agreement.Status = AgreementStatus.Accepted;
             agreement.RespondedAt = DateTime.UtcNow;
@@ -320,7 +327,8 @@ namespace MonyLoop.Application.Services.AgreementPayment
             var onboardingRequest = new OnboardingCaseRequestDto
             {
                 MembershipAgreementId = agreement.MembershipAgreementId,
-                OrganizerId = organizerId.Value
+                OrganizerId = organizerId.Value,
+                UserId = application.UserId.Value // ✅ السطر الناقص اللي كان بيسبب الـ 404
             };
 
             var onboardingResult =
@@ -331,7 +339,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "The agreement was accepted, but the onboarding case could not be created.");
             }
-            await NotifyOrganizerAsync( organizerId.Value, agreement, "Accepted");
+            await NotifyOrganizerAsync(organizerId.Value, agreement, "Accepted");
 
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
@@ -344,7 +352,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             if (agreement is null)
                 return null;
 
-            if (!IsResponseTokenValid( token,agreement.ResponseTokenHash))
+            if (!IsResponseTokenValid(token, agreement.ResponseTokenHash))
             {
                 throw new UnauthorizedAccessException(
                     "The agreement response link is invalid.");
@@ -384,7 +392,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "The circle related to this agreement could not be found.");
             }
-            var organizerId =circle.CircleRequest?.CreatedByOrganizerId;
+            var organizerId = circle.CircleRequest?.CreatedByOrganizerId;
 
             if (organizerId is null ||
                 organizerId == Guid.Empty)
@@ -403,7 +411,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             circle.Status = CircleStatus.InRecruitment;
 
             await _unitOfWork.SaveChangesAsync();
-            await NotifyOrganizerAsync( organizerId.Value, agreement, "Declined");
+            await NotifyOrganizerAsync(organizerId.Value, agreement, "Declined");
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
@@ -465,7 +473,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             return true;
         }
 
-        private async Task NotifyOrganizerAsync(Guid organizerId,MembershipAgreement agreement,string decision)
+        private async Task NotifyOrganizerAsync(Guid organizerId, MembershipAgreement agreement, string decision)
         {
             try
             {
