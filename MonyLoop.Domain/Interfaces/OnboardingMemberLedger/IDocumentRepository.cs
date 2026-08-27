@@ -14,5 +14,13 @@ namespace MonyLoop.Domain.Interfaces.OnboardingMemberLedger
         Task<IEnumerable<Document>> GetPendingReviewAsync(CancellationToken ct = default);
         Task<(IEnumerable<Document> Items, int TotalCount)> GetPendingReviewPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default);
         Task<bool> AllRequiredDocumentsVerifiedAsync(Guid onboardingCaseId, CancellationToken ct = default);
+
+        Task<(IEnumerable<Document> Items, int TotalCount)>
+    GetPendingReviewByOrganizerPagedAsync(
+        Guid organizerId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken ct = default);
+
     }
 }

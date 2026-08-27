@@ -5,6 +5,7 @@ namespace MonyLoop.Domain.Constants.Onboarding___Member_Ledger
         Pending,
         InProgress,
         Approved,
-        Rejected
+        Rejected,
+        Activated
     }
 }

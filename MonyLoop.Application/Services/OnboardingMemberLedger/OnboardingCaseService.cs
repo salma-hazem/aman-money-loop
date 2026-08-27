@@ -35,6 +35,10 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             var onboardingCase = _mapper.Map<OnboardingCase>(request);
 
+            onboardingCase.OnboardingCaseId = Guid.NewGuid();
+            onboardingCase.CreatedAt = DateTime.UtcNow;
+            onboardingCase.FinalStatus = OnboardingCaseStatus.Pending;
+
             await _unitOfWork.OnboardingCases.AddAsync(onboardingCase, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -156,8 +160,7 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
             if (onboardingCase == null)
                 return Result.Fail(Error.NotFound("OnboardingCase.NotFound", $"The onboarding case with ID '{onboardingCaseId}' was not found."));
 
-            onboardingCase.FinalStatus = OnboardingCaseStatus.Approved;
-            _unitOfWork.OnboardingCases.Update(onboardingCase);
+            onboardingCase.FinalStatus = OnboardingCaseStatus.Activated; _unitOfWork.OnboardingCases.Update(onboardingCase);
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
@@ -190,7 +193,9 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             var allVerified = await _unitOfWork.Documents.AllRequiredDocumentsVerifiedAsync(onboardingCaseId, ct);
 
-            if (allVerified && onboardingCase.FinalStatus != OnboardingCaseStatus.Approved)
+            if (allVerified &&
+    onboardingCase.FinalStatus != OnboardingCaseStatus.Approved &&
+    onboardingCase.FinalStatus != OnboardingCaseStatus.Activated)
             {
                 onboardingCase.FinalStatus = OnboardingCaseStatus.Approved;
                 _unitOfWork.OnboardingCases.Update(onboardingCase);

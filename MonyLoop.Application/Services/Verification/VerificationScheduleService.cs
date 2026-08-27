@@ -54,9 +54,16 @@ namespace MonyLoop.Application.Services.Verification
                 ?? throw new KeyNotFoundException($"Verification round with ID {dto.VerificationRoundId} not found.");
 
             // 4. SRS Rule: The selected round must belong to the applicant’s circle
-            if (round.CircleId != application.CircleId)
+            if (application.MarketplaceListing is null)
             {
-                throw new InvalidOperationException("The selected verification round does not belong to the applicant's circle.");
+                throw new InvalidOperationException(
+                    "The applicant's marketplace listing could not be found.");
+            }
+
+            if (round.CircleId != application.MarketplaceListing.CircleId)
+            {
+                throw new InvalidOperationException(
+                    "The selected verification round does not belong to the applicant's circle.");
             }
 
             // 5. SRS Rule: The date and time are in the future
@@ -66,17 +73,19 @@ namespace MonyLoop.Application.Services.Verification
                 throw new ArgumentException("The scheduled date and time must be in the future.");
             }
 
-            // 6. SRS Rule: Format specifics (Location for In-Person, Video Link for Video)
-            var formatStr = round.Format?.ToString() ?? string.Empty;
-            if (formatStr.Contains("InPerson", StringComparison.OrdinalIgnoreCase) || formatStr.Contains("In-Person", StringComparison.OrdinalIgnoreCase))
+            // 6. SRS Rule: Format specifics
+            if (round.Format == VerificationFormat.InPerson &&
+                string.IsNullOrWhiteSpace(dto.LocationLink))
             {
-                if (string.IsNullOrWhiteSpace(dto.LocationLink))
-                    throw new ArgumentException("A location must be supplied for in-person verification rounds.");
+                throw new ArgumentException(
+                    "A location must be supplied for in-person verification rounds.");
             }
-            else if (formatStr.Contains("Video", StringComparison.OrdinalIgnoreCase))
+
+            if (round.Format == VerificationFormat.Video &&
+                string.IsNullOrWhiteSpace(dto.VideoLink))
             {
-                if (string.IsNullOrWhiteSpace(dto.VideoLink))
-                    throw new ArgumentException("A video link must be supplied for video verification rounds.");
+                throw new ArgumentException(
+                    "A video link must be supplied for video verification rounds.");
             }
 
             // 7. SRS Rule: Another active schedule does not already exist
