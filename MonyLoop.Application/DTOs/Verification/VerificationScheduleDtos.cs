@@ -11,6 +11,9 @@ namespace MonyLoop.Application.DTOs.Verification
         public TimeOnly Time { get; set; }
         public string? LocationLink { get; set; }
         public string? VideoLink { get; set; }
+
+        // NEW: Flag to determine if we should send a calendar invite
+        public bool SendCalendarInvite { get; set; }
     }
 
     public class VerificationScheduleResponseDto

@@ -70,21 +70,12 @@ namespace MonyLoop.Application.Services.Verification
                 };
                 await _ratingRepository.AddAsync(rating, ct);
             }
+
             var schedule = await _scheduleRepository.GetByIdAsync(dto.VerificationScheduleId, ct)
                 ?? throw new KeyNotFoundException($"Schedule with ID {dto.VerificationScheduleId} not found.");
 
             schedule.Status = ScheduleStatus.Completed;
             await _scheduleRepository.UpdateByIdAsync(schedule.VerificationScheduleId, schedule, ct);
-
-            var application = await _applicationRepository.GetByIdAsync(schedule.ApplicationId);
-            if (application != null)
-            {
-                application.Stage = compositeScore >= 3.0m 
-                    ? MembershipApplicationStage.VerificationCompleted
-                    : MembershipApplicationStage.Rejected;
-
-                await _applicationRepository.UpdateAsync(application);
-            }
 
             await _unitOfWork.SaveChangesAsync(ct);
 
