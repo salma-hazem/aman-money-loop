@@ -430,3 +430,4 @@ FodyWeavers.xsd
 Backend_Remaining_Tasks.md
 
 MonyLoop.API/AppFiles/
+MonyLoop.API/appsettings.Development.json
