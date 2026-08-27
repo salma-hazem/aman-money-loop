@@ -20,6 +20,10 @@ public interface IMarketplaceListingRepository
         CancellationToken cancellationToken = default);
 
     Task AddAsync(
+    MarketplaceListing listing,
+    CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(
         MarketplaceListing listing,
         CancellationToken cancellationToken = default);
 }

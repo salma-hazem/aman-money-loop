@@ -44,3 +44,8 @@ public sealed class MarketplaceListingQueryDto
     public int? MaxDuration { get; set; }
     public int? MinAvailableSlots { get; set; }
 }
+public sealed class UpdateMarketplaceListingStatusDto
+{
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MarketplaceListingStatus Status { get; set; }
+}
