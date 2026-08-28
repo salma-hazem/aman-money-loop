@@ -5,6 +5,7 @@ using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.Marketplace___Applications;
 using MonyLoop.Domain.Interfaces;
+using MonyLoop.Domain.Interfaces.CircleRequestManagement;
 
 namespace MonyLoop.Application.Services
 {
@@ -12,18 +13,30 @@ namespace MonyLoop.Application.Services
     {
         private readonly IMembershipApplicationRepository _repository;
         private readonly IEmailSender _emailSender;
+        private readonly IMarketplaceListingRepository _listingRepository;
 
         public MembershipApplicationService(
         IMembershipApplicationRepository repository,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IMarketplaceListingRepository listingRepository)
         {
             _repository = repository;
             _emailSender = emailSender;
+            _listingRepository = listingRepository;
         }
 
         public async Task<Result<MembershipApplicationDetailDto>> CreateApplicationAsync(
-            CreateMembershipApplicationDto dto)
+    CreateMembershipApplicationDto dto)
         {
+            var listing = await _listingRepository.GetByIdAsync(dto.ListingId);
+
+            if (listing is null)
+                return Error.NotFound("MarketplaceListing.NotFound", "This circle listing could not be found.");
+
+            if (listing.ListingStatus != MarketplaceListingStatus.Active)
+                return Error.Validation("MarketplaceListing.NotAcceptingApplications",
+                    "This circle is not currently accepting applications.");
+
             var application = new MembershipApplication
             {
                 MembershipApplicationId = Guid.NewGuid(),
