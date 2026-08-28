@@ -1,35 +1,65 @@
 ﻿using AutoMapper;
 using MonyLoop.Application.DTOs.AgreementPayment.MembershipAgreement;
+using MonyLoop.Application.DTOs.OnboardingMemberLedger;
+using MonyLoop.Application.ServicesAbstractions;
+using MonyLoop.Application.ServicesAbstractions.UserAuth;
 using MonyLoop.Application.ServicesAbstractions.AgreementPayment;
+using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Constants.Agreement___Payment;
 using MonyLoop.Domain.Entities.Agreement___Payment;
 using MonyLoop.Domain.Interfaces;
 using MonyLoop.Domain.Interfaces.AgreementPayment;
+using MonyLoop.Domain.Interfaces.CircleRequestManagement;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using MonyLoop.Domain.Entities.UserAuth;
+using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace MonyLoop.Application.Services.AgreementPayment
 {
     public class MembershipAgreementService : IMembershipAgreementService
     {
+        private readonly IMembershipApplicationRepository _membershipApplicationRepository;
         private readonly IMembershipAgreementRepository _membershipAgreementRepository;
+        private readonly IOnboardingCaseService _onboardingCaseService;
+        private readonly ICircleSlotRepository _circleSlotRepository;
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _configuration;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<MembershipAgreementService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IMembershipApplicationRepository _membershipApplicationRepository;
 
         public MembershipAgreementService(
-        IMembershipAgreementRepository membershipAgreementRepository,
-        IMembershipApplicationRepository membershipApplicationRepository,
-        IUnitOfWork unitOfWork,
-        IMapper mapper)
+            IMembershipAgreementRepository membershipAgreementRepository,
+            IMembershipApplicationRepository membershipApplicationRepository,
+            IOnboardingCaseService onboardingCaseService,
+            ICircleSlotRepository circleSlotRepository,
+            UserManager<ApplicationUser> userManager,
+            ILogger<MembershipAgreementService> logger,
+            IEmailSender emailSender,
+            IConfiguration configuration,
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             _membershipAgreementRepository = membershipAgreementRepository;
             _membershipApplicationRepository = membershipApplicationRepository;
+            _onboardingCaseService = onboardingCaseService;
+            _userManager = userManager;
+            _circleSlotRepository = circleSlotRepository;
+            _logger = logger;
+            _emailSender = emailSender;
+            _configuration = configuration;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<MembershipAgreementResponse> CreateAgreementAsync(
-    CreateMembershipAgreementRequest request)
+            CreateMembershipAgreementRequest request,
+            Guid organizerId)
         {
             var application =
                 await _membershipApplicationRepository
@@ -40,26 +70,21 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new KeyNotFoundException(
                     "Membership application was not found.");
             }
-            // For the current implementation,
-            // VerificationCompleted means Verification Completed + Selected. I'll make sure 
-            if (application.Stage !=
-                MembershipApplicationStage.VerificationCompleted)
+            //i assumed VerificationCompleted means Verification Completed + Selected
+            if (application.Stage != MembershipApplicationStage.VerificationCompleted)
             {
                 throw new InvalidOperationException(
                     "An agreement can only be generated for a member who has completed verification and has been selected.");
             }
-
-            var agreementAlreadyExists =await _membershipAgreementRepository
+            var agreementAlreadyExists = await _membershipAgreementRepository
                     .ExistsForMembershipApplicationAsync(
                         request.MembershipApplicationId);
-
             if (agreementAlreadyExists)
             {
                 throw new InvalidOperationException(
                     "A membership agreement already exists for this application.");
             }
-
-            var today =DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             if (request.ExpiryDate <= today)
             {
                 throw new ArgumentException(
@@ -88,6 +113,28 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 throw new InvalidOperationException(
                     "Circle request was not found for this circle.");
             }
+            if (circleRequest.CreatedByOrganizerId != organizerId)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorized to create an agreement for this membership application.");
+            }
+            if (request.PayoutSlot <= 0)
+            {
+                throw new ArgumentException(
+                    "Payout slot must be greater than zero.");
+            }
+            var payoutSlot = await _circleSlotRepository
+                .GetByCircleAndSlotNumberAsync(circle.CircleId, request.PayoutSlot);
+            if (payoutSlot is null)
+            {
+                throw new ArgumentException("The selected payout slot does not exist for this circle.");
+            }
+            if (payoutSlot.Status != CircleSlotStatus.Vacant ||
+                payoutSlot.MemberLedgerId is not null)
+            {
+                throw new InvalidOperationException("The selected payout slot is not available.");
+            }
+            var responseToken = GenerateResponseToken();
             var agreement = new MembershipAgreement
             {
                 MembershipAgreementId = Guid.NewGuid(),
@@ -100,92 +147,288 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 ExpiryDate = request.ExpiryDate,
                 Status = AgreementStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
+                ResponseTokenHash = HashResponseToken(responseToken),
                 RespondedAt = null
             };
-            await _membershipAgreementRepository .AddAsync(agreement);
+            await _membershipAgreementRepository.AddAsync(agreement);
             application.Stage = MembershipApplicationStage.AgreementExtended;
             await _unitOfWork.SaveChangesAsync();
-            return _mapper.Map<MembershipAgreementResponse>(
-                agreement);
-        }
+            var frontendBaseUrl =
+                _configuration["ApplicationUrls:FrontendBaseUrl"];
+            if (string.IsNullOrWhiteSpace(frontendBaseUrl))
+            {
+                throw new InvalidOperationException(
+                    "Frontend base URL is not configured.");
+            }
+            var responseUrl =
+                $"{frontendBaseUrl.TrimEnd('/')}/agreement-response" +
+                $"?agreementId={agreement.MembershipAgreementId}" +
+                $"&token={Uri.EscapeDataString(responseToken)}";
 
-        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(Guid id)
-        {
-            var agreement =
-                await _membershipAgreementRepository.GetByIdAsync(id);
+            var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+            var emailBody = isArabic
+                ? $"""
+            <div dir="rtl" style="text-align:right">
+                <p>عزيزي/ عزيزتي {application.Name}،</p>
+                <p>اتفاقية عضويتك في جمعية <strong>{agreement.CircleTitle}</strong> جاهزة للمراجعة.</p>
+                <p>يرجى استخدام الرابط أدناه لمراجعة الاتفاقية والرد عليها:</p>
+                <p><a href="{responseUrl}">مراجعة اتفاقية العضوية</a></p>
+                <p>تنتهي صلاحية هذه الاتفاقية في <strong>{agreement.ExpiryDate:dd MMM yyyy}</strong>.</p>
+                <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+            </div>
+            """
+                : $"""
+            <p>Dear {application.Name},</p>
 
-            if (agreement is null)
-                return null;
+            <p>
+                Your membership agreement for
+                <strong>{agreement.CircleTitle}</strong>
+                is ready for review.
+            </p>
 
-            await MarkAsExpiredIfNeededAsync(agreement);
+            <p>
+                Please use the link below to review and respond to your agreement:
+            </p>
 
+            <p>
+                <a href="{responseUrl}">
+                    Review Membership Agreement
+                </a>
+            </p>
+
+            <p>
+                This agreement expires on
+                <strong>{agreement.ExpiryDate:dd MMM yyyy}</strong>.
+            </p>
+
+            <p>Regards,<br/>MonyLoop Team</p>
+            """;
+            await _emailSender.SendEmailAsync(
+                application.Email,
+                isArabic ? "اتفاقية العضوية جاهزة للمراجعة" : "Membership Agreement Ready for Review",
+                emailBody);
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> GetAgreementByIdAsync(
+            Guid id,
+            Guid requesterId,
+            bool isAdmin)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
-
             if (agreement is null)
                 return null;
+            await MarkAsExpiredIfNeededAsync(agreement);
+            // Admin can access any agreement.
+            if (!isAdmin)
+            {
+                var application =
+                    await _membershipApplicationRepository
+                        .GetByIdWithAgreementDetailsAsync(
+                            agreement.MembershipApplicationId);
+                if (application is null)
+                {
+                    throw new InvalidOperationException(
+                        "The membership application related to this agreement was not found.");
+                }
+                var organizerId =
+                    application.MarketplaceListing?
+                        .Circle?
+                        .CircleRequest?
+                        .CreatedByOrganizerId;
+                if (organizerId is null ||
+                    organizerId == Guid.Empty)
+                {
+                    throw new InvalidOperationException(
+                        "The organizer for this agreement could not be determined.");
+                }
+                if (organizerId.Value != requesterId)
+                {
+                    throw new UnauthorizedAccessException(
+                        "You are not authorized to access this agreement.");
+                }
+            }
+            return _mapper.Map<MembershipAgreementResponse>(agreement);
+        }
 
+        public async Task<MembershipAgreementResponse?> AcceptAgreementAsync(Guid id, string token)
+        {
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(id);
+            if (agreement is null)
+                return null;
+            if (!IsResponseTokenValid(token, agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
             var isExpired =
                 await MarkAsExpiredIfNeededAsync(agreement);
-
             if (isExpired)
             {
                 throw new InvalidOperationException(
                     "The agreement has expired and can no longer be accepted.");
             }
-
             if (agreement.Status != AgreementStatus.Pending)
             {
                 throw new InvalidOperationException(
                     "Only pending agreements can be accepted.");
             }
-
+            // Get the related application and circle information
+            var application =
+                await _membershipApplicationRepository
+                    .GetByIdWithAgreementDetailsAsync(
+                        agreement.MembershipApplicationId);
+            if (application is null)
+            {
+                throw new InvalidOperationException(
+                    "The membership application related to this agreement was not found.");
+            }
+            var organizerId =
+                application.MarketplaceListing?
+                    .Circle?
+                    .CircleRequest?
+                    .CreatedByOrganizerId;
+            if (organizerId is null || organizerId == Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "The organizer for this agreement could not be determined.");
+            }
+            // ✅ التصليح: لازم يكون فيه UserId مرتبط بالـ Application قبل ما نكمل
+            if (application.UserId is null || application.UserId == Guid.Empty)
+            {
+                var linkedUser =
+                    await _userManager.FindByEmailAsync(application.Email.Trim());
+                if (linkedUser == null ||
+                    !linkedUser.IsActive ||
+                    !linkedUser.EmailConfirmed)
+                {
+                    throw new InvalidOperationException(
+                        "Please create and verify a MonyLoop account using the same email address before accepting the agreement.");
+                }
+                if (!string.Equals(
+                    linkedUser.NationalId?.Trim(),
+                    application.NationalId.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "The registered account details do not match this membership application.");
+                }
+                application.UserId = linkedUser.Id;
+            }
+            // Accept agreement
             agreement.Status = AgreementStatus.Accepted;
             agreement.RespondedAt = DateTime.UtcNow;
-
+            // Agreement Extended → Confirmed
+            application.Stage = MembershipApplicationStage.Confirmed;
             _membershipAgreementRepository.Update(agreement);
-
             await _unitOfWork.SaveChangesAsync();
-
+            // Trigger Module 6 onboarding
+            var onboardingRequest = new OnboardingCaseRequestDto
+            {
+                MembershipAgreementId = agreement.MembershipAgreementId,
+                OrganizerId = organizerId.Value,
+                UserId = application.UserId.Value // ✅ السطر الناقص اللي كان بيسبب الـ 404
+            };
+            var onboardingResult =
+                await _onboardingCaseService.CreateAsync(onboardingRequest);
+            if (onboardingResult.IsFailure)
+            {
+                throw new InvalidOperationException(
+                    "The agreement was accepted, but the onboarding case could not be created.");
+            }
+            await NotifyMemberOnboardingReadyAsync(
+                application.Email,
+                application.Name);
+            await NotifyOrganizerAsync(
+                organizerId.Value,
+                agreement,
+                "Accepted");
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
 
-        public async Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id)
+        public async Task<MembershipAgreementResponse?> DeclineAgreementAsync(Guid id, string token)
         {
             var agreement =
                 await _membershipAgreementRepository.GetByIdAsync(id);
-
             if (agreement is null)
                 return null;
-
+            if (!IsResponseTokenValid(token, agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
             var isExpired =
                 await MarkAsExpiredIfNeededAsync(agreement);
-
             if (isExpired)
             {
                 throw new InvalidOperationException(
                     "The agreement has expired and can no longer be declined.");
             }
-
             if (agreement.Status != AgreementStatus.Pending)
             {
                 throw new InvalidOperationException(
                     "Only pending agreements can be declined.");
             }
-
+            var application =
+                await _membershipApplicationRepository
+                    .GetByIdWithAgreementDetailsAsync(
+                        agreement.MembershipApplicationId);
+            if (application is null)
+            {
+                throw new InvalidOperationException(
+                    "The membership application related to this agreement was not found.");
+            }
+            var circle =
+                application.MarketplaceListing?.Circle;
+            if (circle is null)
+            {
+                throw new InvalidOperationException(
+                    "The circle related to this agreement could not be found.");
+            }
+            var organizerId = circle.CircleRequest?.CreatedByOrganizerId;
+            if (organizerId is null ||
+                organizerId == Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "The organizer for this agreement could not be determined.");
+            }
+            // Decline the agreement
             agreement.Status = AgreementStatus.Declined;
             agreement.RespondedAt = DateTime.UtcNow;
-
             _membershipAgreementRepository.Update(agreement);
-
+            // Return the circle to recruitment
+            circle.Status = CircleStatus.InRecruitment;
             await _unitOfWork.SaveChangesAsync();
-
+            await NotifyOrganizerAsync(organizerId.Value, agreement, "Declined");
             return _mapper.Map<MembershipAgreementResponse>(agreement);
+        }
+
+        public async Task<MembershipAgreementResponse?> GetAgreementForResponseAsync(
+            Guid id,
+            string token)
+        {
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(id);
+            if (agreement is null)
+                return null;
+            if (!IsResponseTokenValid(
+                token,
+                agreement.ResponseTokenHash))
+            {
+                throw new UnauthorizedAccessException(
+                    "The agreement response link is invalid.");
+            }
+            var isExpired =
+                await MarkAsExpiredIfNeededAsync(agreement);
+            if (isExpired)
+            {
+                throw new InvalidOperationException(
+                    "This agreement has expired. Please contact Operations for assistance.");
+            }
+            return _mapper.Map<MembershipAgreementResponse>(
+                agreement);
         }
 
         private async Task<bool> MarkAsExpiredIfNeededAsync(
@@ -194,25 +437,173 @@ namespace MonyLoop.Application.Services.AgreementPayment
             // Already expired
             if (agreement.Status == AgreementStatus.Expired)
                 return true;
-
             // Accepted or declined agreements should never later become expired
             if (agreement.Status != AgreementStatus.Pending)
                 return false;
-
             var today =
                 DateOnly.FromDateTime(DateTime.UtcNow);
-
             // Still valid
             if (agreement.ExpiryDate >= today)
                 return false;
-
             agreement.Status = AgreementStatus.Expired;
-
             _membershipAgreementRepository.Update(agreement);
-
             await _unitOfWork.SaveChangesAsync();
-
             return true;
+        }
+
+        private async Task NotifyMemberOnboardingReadyAsync(
+            string email,
+            string memberName)
+        {
+            try
+            {
+                var frontendBaseUrl =
+                    _configuration["ApplicationUrls:FrontendBaseUrl"];
+                if (string.IsNullOrWhiteSpace(frontendBaseUrl))
+                {
+                    _logger.LogWarning(
+                        "Frontend base URL is not configured for onboarding notification.");
+                    return;
+                }
+                var portalUrl =
+                    $"{frontendBaseUrl.TrimEnd('/')}/console/onboarding/upload";
+                var body = $"""
+        <p>Dear {memberName},</p>
+
+        <p>Your membership agreement has been accepted successfully.</p>
+
+        <p>
+            Please continue your onboarding by uploading the required documents
+            through the secure member portal.
+        </p>
+
+        <p>
+            <a href="{portalUrl}">
+                Continue Onboarding
+            </a>
+        </p>
+
+        <p>
+            You will be required to sign in to your MonyLoop account
+            before accessing your onboarding documents.
+        </p>
+
+        <p>Regards,<br/>MonyLoop Team</p>
+        """;
+                await _emailSender.SendEmailAsync(
+                    email,
+                    "Complete Your MonyLoop Onboarding",
+                    body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to send onboarding portal link to {Email}.",
+                    email);
+            }
+        }
+
+        private async Task NotifyOrganizerAsync(
+            Guid organizerId,
+            MembershipAgreement agreement,
+            string decision)
+        {
+            try
+            {
+                var organizer =
+                    await _userManager.FindByIdAsync(
+                        organizerId.ToString());
+                if (organizer is null ||
+                    string.IsNullOrWhiteSpace(organizer.Email))
+                {
+                    _logger.LogWarning(
+                        "Organizer email could not be found for agreement {AgreementId}.",
+                        agreement.MembershipAgreementId);
+                    return;
+                }
+
+                var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+                var localizedDecision = decision.Equals("accepted", StringComparison.OrdinalIgnoreCase)
+                    ? "مقبولة"
+                    : decision.Equals("declined", StringComparison.OrdinalIgnoreCase) ? "مرفوضة" : decision;
+                var subject = isArabic
+                    ? $"اتفاقية العضوية {localizedDecision}"
+                    : $"Membership Agreement {decision}";
+
+                var body = isArabic
+                    ? $"""
+            <div dir="rtl" style="text-align:right">
+                <p>عزيزي/ عزيزتي {organizer.FirstName}،</p>
+                <p>تم {localizedDecision} اتفاقية عضوية <strong>{agreement.MemberName}</strong> في جمعية <strong>{agreement.CircleTitle}</strong>.</p>
+                <p>رقم الاتفاقية: <span dir="ltr">{agreement.MembershipAgreementId}</span></p>
+                <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+            </div>
+            """
+                    : $"""
+            <p>Dear {organizer.FirstName},</p>
+
+            <p>
+                The membership agreement for
+                <strong>{agreement.MemberName}</strong>
+                in circle
+                <strong>{agreement.CircleTitle}</strong>
+                has been
+                <strong>{decision}</strong>.
+            </p>
+
+            <p>
+                Agreement ID:
+                {agreement.MembershipAgreementId}
+            </p>
+
+            <p>Regards,<br/>MonyLoop Team</p>
+            """;
+                await _emailSender.SendEmailAsync(
+                    organizer.Email,
+                    subject,
+                    body);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Failed to notify organizer {OrganizerId} for agreement {AgreementId}.",
+                    organizerId,
+                    agreement.MembershipAgreementId);
+            }
+        }
+
+        private static string GenerateResponseToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToHexString(bytes);
+        }
+
+        private static string HashResponseToken(string token)
+        {
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = SHA256.HashData(bytes);
+            return Convert.ToHexString(hash);
+        }
+
+        private static bool IsResponseTokenValid(
+            string token,
+            string storedTokenHash)
+        {
+            if (string.IsNullOrWhiteSpace(token) ||
+                string.IsNullOrWhiteSpace(storedTokenHash))
+            {
+                return false;
+            }
+            var providedHash =
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(token));
+            var storedHash =
+                Convert.FromHexString(storedTokenHash);
+            return CryptographicOperations.FixedTimeEquals(
+                providedHash,
+                storedHash);
         }
     }
 }

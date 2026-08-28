@@ -1,9 +1,14 @@
+using MonyLoop.Domain.Constants;
 using MonyLoop.Domain.Entities.CircleRequestManagement;
 
 namespace MonyLoop.Domain.Interfaces.CircleRequestManagement;
 
 public interface ICircleRepository
 {
+    Task<IReadOnlyList<Circle>> GetAllAsync(
+        CircleStatus? status = null,
+        CancellationToken cancellationToken = default);
+
     Task<Circle?> GetByIdAsync(
         Guid circleId,
         CancellationToken cancellationToken = default);

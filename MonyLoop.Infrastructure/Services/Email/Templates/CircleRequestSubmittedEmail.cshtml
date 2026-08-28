@@ -1,0 +1,19 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.CircleRequestSubmittedEmailModel
+
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "Circle Request Submitted";
+}
+
+<h2>Hello @Model.RecipientName,</h2>
+
+<p>A circle request has been submitted and is ready for Admin review.</p>
+
+<div class="info-box">
+    <p><strong>Circle</strong><br />@Model.CircleTitle</p>
+    <p><strong>Request type</strong><br />@Model.CircleType</p>
+    <p><strong>Request ID</strong><br />@Model.RequestId</p>
+    <p><strong>Submitted at</strong><br />@Model.SubmittedAt.ToString("u") UTC</p>
+</div>
+
+<p>Please open the approval queue to review the request.</p>

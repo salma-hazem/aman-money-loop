@@ -1,0 +1,23 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.CircleRequestDecisionEmailModel
+
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "Circle Request Decision";
+}
+
+<h2>Hello @Model.OrganizerName,</h2>
+
+<p>A decision has been recorded for your circle request.</p>
+
+<div class="info-box">
+    <p><strong>Circle</strong><br />@Model.CircleTitle</p>
+    <p><strong>Status</strong><br />@Model.RequestStatus</p>
+    <p><strong>Request ID</strong><br />@Model.RequestId</p>
+    <p><strong>Reviewed at</strong><br />@Model.ReviewedAt.ToString("u") UTC</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.DecisionReason))
+{
+    <p><strong>Reason</strong></p>
+    <p>@Model.DecisionReason</p>
+}

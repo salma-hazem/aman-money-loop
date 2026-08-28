@@ -14,11 +14,12 @@ namespace MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger
         Task<Result<OnboardingCaseResponseDto>> CreateAsync(OnboardingCaseRequestDto request, CancellationToken ct = default);
         Task<Result<OnboardingCaseResponseDto>> GetByIdAsync(Guid onboardingCaseId, CancellationToken ct = default);
         Task<Result<OnboardingCaseResponseDto>> GetByIdWithDocumentsAsync(Guid onboardingCaseId, CancellationToken ct = default);
-        Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, CancellationToken ct = default);
-        Task<Result<IEnumerable<OnboardingCaseResponseDto>>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default);
+        Task<Result<PagedResult<OnboardingCaseResponseDto>>> GetByOrganizerIdAsync(Guid organizerId, int pageNumber, int pageSize, CancellationToken ct = default);
+        Task<Result<PagedResult<OnboardingCaseResponseDto>>> GetByStatusAsync(OnboardingCaseStatus status, int pageNumber, int pageSize, CancellationToken ct = default);
         Task<Result> MarkDocumentsVerifiedAsync(Guid onboardingCaseId, CancellationToken ct = default);
         Task<Result> RecalculateAndUpdateStatusAsync(Guid onboardingCaseId, CancellationToken ct = default);
         Task<Result> MarkActivatedAsync(Guid onboardingCaseId, Guid activatedByAdminId, CancellationToken ct = default);
 
+        Task<Result<OnboardingCaseResponseDto>> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     }
 }

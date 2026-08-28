@@ -1,0 +1,16 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.OtpEmailModel
+
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "Verification Code";
+}
+
+<h2>Hello @Model.UserName,</h2>
+
+<p>Use the following code to verify your account:</p>
+
+<div class="otp">@Model.Code</div>
+
+<p class="warning">
+    This code expires in @Model.ExpiryMinutes minutes. Do not share it with anyone.
+</p>

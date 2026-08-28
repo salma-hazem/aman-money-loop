@@ -4,10 +4,10 @@
 
 This plan organizes the remaining backend work for five team members using the existing Onion Architecture solution:
 
-- `Mony_Loop.Domain`: entities, enums, domain rules, and domain-level contracts.
-- `Mony_Loop.Application`: use cases, DTOs, validation, service abstractions, mapping, and result models.
-- `Mony_Loop.Infrastructure`: EF Core, ASP.NET Core Identity, repositories, email, file storage, and other external services.
-- `Mony_Loop.API`: controllers, authentication setup, middleware, dependency injection, and Swagger.
+- `MonyLoop.Domain`: entities, enums, domain rules, and domain-level contracts.
+- `MonyLoop.Application`: use cases, DTOs, validation, service abstractions, mapping, and result models.
+- `MonyLoop.Infrastructure`: EF Core, ASP.NET Core Identity, repositories, email, file storage, and other external services.
+- `MonyLoop.API`: controllers, authentication setup, middleware, dependency injection, and Swagger.
 
 Every member owns one business module from Domain through API. Module 1 is shared because authentication, users, roles, and authorization are required by every other module.
 

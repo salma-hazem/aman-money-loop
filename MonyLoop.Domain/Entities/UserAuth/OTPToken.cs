@@ -15,6 +15,7 @@ namespace MonyLoop.Domain.Entities.UserAuth
         public OTPPurpose Purpose { get; set; }
         public DateTime ExpiresAt { get; set; }
         public bool IsUsed { get; set; }
+        public int AttemptsCount { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Nav prop

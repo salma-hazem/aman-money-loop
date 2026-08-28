@@ -58,6 +58,31 @@ public sealed class CircleRequestRepository : ICircleRequestRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<bool> HasActiveReplacementAsync(
+        Guid existingCircleId,
+        int vacantSlotNumber,
+        Guid? excludedRequestId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var activeStatuses = new[]
+        {
+            CircleRequestStatus.Draft,
+            CircleRequestStatus.Submitted,
+            CircleRequestStatus.ModificationRequested,
+            CircleRequestStatus.Approved,
+            CircleRequestStatus.Published
+        };
+
+        return _context.CircleRequests.AnyAsync(
+            request =>
+                request.ExistingCircleId == existingCircleId &&
+                request.VacantSlotNumber == vacantSlotNumber &&
+                request.CircleType == CircleType.Replacement &&
+                activeStatuses.Contains(request.RequestStatus) &&
+                (!excludedRequestId.HasValue || request.RequestId != excludedRequestId.Value),
+            cancellationToken);
+    }
+
     public Task<bool> ExistsAsync(
         Guid requestId,
         CancellationToken cancellationToken = default)

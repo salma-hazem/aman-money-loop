@@ -41,6 +41,7 @@ namespace MonyLoop.Infrastructure.Data
         public DbSet<MarketplaceListing> MarketplaceListings { get; set; }
         public DbSet<CircleSlot> CircleSlots { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+
         public DbSet<MembershipApplication> MembershipApplications { get; set; }
 
         public DbSet<VerificationRound> VerificationRounds { get; set; }
@@ -54,5 +55,7 @@ namespace MonyLoop.Infrastructure.Data
         public DbSet<MemberLedger> MemberLedgers { get; set; }
         public DbSet<OnboardingCase> OnboardingCases { get; set; }
         public DbSet<OTPToken> OTPTokens { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

@@ -60,12 +60,53 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
                 .ToListAsync(ct);
         }
 
+        public async Task<(IReadOnlyList<OnboardingCase> Items, int TotalCount)> GetByOrganizerIdPagedAsync(
+              Guid organizerId, int pageNumber, int pageSize, CancellationToken ct = default)
+        {
+            var query = _dbcontext.OnboardingCases.Where(o => o.OrganizerId == organizerId);
+            var totalCount = await query.CountAsync(ct);
+            var items = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .ThenBy(o => o.OnboardingCaseId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+            return (items, totalCount);
+        }
+
         public async Task<IEnumerable<OnboardingCase>> GetByStatusAsync(OnboardingCaseStatus status, CancellationToken ct = default)
         {
             return await _dbcontext.OnboardingCases
                 .AsNoTracking()
                 .Where(c => c.FinalStatus == status)
                 .ToListAsync(ct);
+        }
+
+        public async Task<(IReadOnlyList<OnboardingCase> Items, int TotalCount)> GetByStatusPagedAsync(
+                OnboardingCaseStatus status, int pageNumber, int pageSize, CancellationToken ct = default)
+        {
+            var query = _dbcontext.OnboardingCases.Where(o => o.FinalStatus == status);
+            var totalCount = await query.CountAsync(ct);
+            var items = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .ThenBy(o => o.OnboardingCaseId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+            return (items, totalCount);
+        }
+
+        public async Task<OnboardingCase?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+
+            if (userId == Guid.Empty)
+                throw new ArgumentException("Invalid user ID", nameof(userId));
+
+            return await _dbcontext.OnboardingCases
+                .AsNoTracking()
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync(ct);
         }
     }
 }

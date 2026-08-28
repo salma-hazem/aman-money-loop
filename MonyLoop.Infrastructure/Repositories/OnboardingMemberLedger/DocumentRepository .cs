@@ -31,7 +31,7 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
                 .ToListAsync(ct);
 
             if (!reqeiredRequirementsIds.Any())
-                return true;
+                return false;
 
             var verifiedRequirmentsIds = await _dbcontext.Documents
                 .Where(x => x.OnboardingCaseId == onboardingCaseId
@@ -77,6 +77,59 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
                 .ToListAsync(ct);
 
 
+        }
+
+        public async Task<(IEnumerable<Document> Items, int TotalCount)> GetPendingReviewPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+        {
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var query = _dbcontext.Documents
+                .AsNoTracking()
+                .Where(x => x.Status == DocumentStatus.Pending);
+
+            var totalCount = await query.CountAsync(ct);
+
+            var items = await query
+                .OrderByDescending(x => x.UploadedAt)
+                .ThenBy(x => x.DocumentId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return (items, totalCount);
+        }
+
+        public async Task<(IEnumerable<Document> Items, int TotalCount)>
+    GetPendingReviewByOrganizerPagedAsync(
+        Guid organizerId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken ct = default)
+        {
+            if (organizerId == Guid.Empty)
+                throw new ArgumentException("Invalid organizer ID", nameof(organizerId));
+
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var query = _dbcontext.Documents
+                .AsNoTracking()
+                .Where(x =>
+                    x.Status == DocumentStatus.Pending &&
+                    x.OnboardingCase != null &&
+                    x.OnboardingCase.OrganizerId == organizerId);
+
+            var totalCount = await query.CountAsync(ct);
+
+            var items = await query
+                .OrderByDescending(x => x.UploadedAt)
+                .ThenBy(x => x.DocumentId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return (items, totalCount);
         }
     }
 }

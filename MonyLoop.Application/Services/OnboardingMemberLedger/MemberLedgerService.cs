@@ -3,7 +3,12 @@ using MonyLoop.Application.Common;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 using MonyLoop.Domain.Entities.Onboarding___Member_Ledger;
+using MonyLoop.Domain.Constants.Onboarding___Member_Ledger;
 using MonyLoop.Domain.Interfaces;
+using MonyLoop.Application.ServicesAbstractions.CircleRequestManagement;
+using MonyLoop.Domain.Interfaces.AgreementPayment;
+using MonyLoop.Domain.Constants.Agreement___Payment;
+using MonyLoop.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,38 +22,236 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IOnboardingCaseService _onboardingCaseService;
+        private readonly ISlotAssignmentService _slotAssignmentService;
+        private readonly IMembershipAgreementRepository _membershipAgreementRepository;
+        private readonly IMembershipApplicationRepository _membershipApplicationRepository;
 
-        public MemberLedgerService(IUnitOfWork unitOfWork, IMapper mapper, IOnboardingCaseService onboardingCaseService)
+        public MemberLedgerService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IOnboardingCaseService onboardingCaseService,
+            ISlotAssignmentService slotAssignmentService,
+            IMembershipAgreementRepository membershipAgreementRepository,
+            IMembershipApplicationRepository membershipApplicationRepository)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _onboardingCaseService = onboardingCaseService;
+            _slotAssignmentService = slotAssignmentService;
+            _membershipAgreementRepository = membershipAgreementRepository;
+            _membershipApplicationRepository = membershipApplicationRepository;
         }
 
-        public async Task<Result<MemberLedgerResponseDto>> ActivateAsync(MemberLedgerRequestDto request, Guid activatedByAdminId, CancellationToken ct = default)
+        public async Task<Result<MemberLedgerResponseDto>> ActivateAsync(
+    MemberLedgerRequestDto request,
+    Guid activatedByAdminId,
+    CancellationToken ct = default)
         {
             if (request == null)
-                return Result<MemberLedgerResponseDto>.Fail(Error.Validation("MemberLedger.NullRequest", "The member ledger request data cannot be null."));
-
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.NullRequest",
+                        "The member ledger request data cannot be null."));
+            }
 
             if (request.UserId == Guid.Empty)
-                return Result<MemberLedgerResponseDto>.Fail(Error.Validation("MemberLedger.InvalidUserId", "A valid User ID must be provided."));
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.InvalidUserId",
+                        "A valid User ID must be provided."));
+            }
 
-            var alreadyExists = await _unitOfWork.MemberLedgers.ExistsForUserAsync(request.UserId, ct);
+            if (activatedByAdminId == Guid.Empty)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.InvalidAdminId",
+                        "The authenticated Admin ID is invalid."));
+            }
+
+            var onboardingCase =
+                await _unitOfWork.OnboardingCases.GetByIdAsync(
+                    request.OnboardingCaseId,
+                    ct);
+
+            if (onboardingCase is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "OnboardingCase.NotFound",
+                        "The onboarding case was not found."));
+            }
+
+            if (onboardingCase.UserId != request.UserId)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.OnboardingUserMismatch",
+                        "The onboarding case does not belong to the provided user."));
+            }
+
+            var allDocumentsVerified =
+                await _unitOfWork.Documents.AllRequiredDocumentsVerifiedAsync(
+                    request.OnboardingCaseId,
+                    ct);
+
+            if (!allDocumentsVerified)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.DocumentsNotVerified",
+                        "All required documents must be uploaded and verified before activation."));
+            }
+
+            if (onboardingCase.FinalStatus != OnboardingCaseStatus.Approved)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.OnboardingNotApproved",
+                        "The onboarding case must be approved before activating the member ledger."));
+            }
+
+            var agreement =
+                await _membershipAgreementRepository.GetByIdAsync(
+                    onboardingCase.MembershipAgreementId,
+                    ct);
+
+            if (agreement is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "MembershipAgreement.NotFound",
+                        "The membership agreement was not found."));
+            }
+
+            if (agreement.Status != AgreementStatus.Accepted)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MembershipAgreement.NotAccepted",
+                        "The membership agreement must be accepted before activating the member ledger."));
+            }
+
+            var application =
+                await _membershipApplicationRepository
+                    .GetByIdWithAgreementDetailsAsync(
+                        agreement.MembershipApplicationId);
+
+            if (application is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "MembershipApplication.NotFound",
+                        "The membership application was not found."));
+            }
+
+            if (application.UserId != request.UserId)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Validation(
+                        "MemberLedger.UserMismatch",
+                        "The provided user does not belong to this membership application."));
+            }
+
+            var circle =
+                application.MarketplaceListing?.Circle;
+
+            if (circle is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "Circle.NotFound",
+                        "The circle related to this membership agreement was not found."));
+            }
+            var linkedRequest = circle.CircleRequest;
+
+            if (linkedRequest is null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.NotFound(
+                        "CircleRequest.NotFound",
+                        "The circle request linked to this circle was not found."));
+            }
+
+            var existingLedgerForCase =
+    await _unitOfWork.MemberLedgers.GetByOnboardingCaseIdAsync(
+        request.OnboardingCaseId,
+        ct);
+
+            if (existingLedgerForCase != null)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Failure(
+                        "MemberLedger.OnboardingAlreadyActivated",
+                        "This onboarding case has already been activated."));
+            }
+            var alreadyExists =
+                await _unitOfWork.MemberLedgers.ExistsForUserAsync(
+                    request.UserId,
+                    ct);
+
             if (alreadyExists)
-                return Result<MemberLedgerResponseDto>.Fail(Error.Failure("MemberLedger.AlreadyExists", "This user already has an active member ledger."));
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    Error.Failure(
+                        "MemberLedger.AlreadyExists",
+                        "This user already has an active member ledger."));
+            }
 
-            var memberLedger = _mapper.Map<MemberLedger>(request);
+            var memberLedger = new MemberLedger
+            {
+                MemberLedgerId = Guid.NewGuid(),
+                UserId = request.UserId,
+                OnboardingCaseId = request.OnboardingCaseId,
 
-            await _unitOfWork.MemberLedgers.AddAsync(memberLedger, ct);
+                // Use the authenticated Admin, not an ID supplied by the client.
+                ActivatedByAdminId = activatedByAdminId,
 
-            var updateStatusResult = await _onboardingCaseService.MarkActivatedAsync(request.OnboardingCaseId, activatedByAdminId, ct);
+                ActivatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.MemberLedgers.AddAsync(
+                memberLedger,
+                ct);
+
+            // Assign exactly the payout slot selected
+            // in the membership agreement.
+            var slotAssignmentResult =
+                await _slotAssignmentService.AssignMemberLedgerAsync(
+                    activatedByAdminId,
+                    circle.CircleId,
+                    agreement.PayoutSlot,
+                    memberLedger.MemberLedgerId,
+                    ct);
+
+            if (slotAssignmentResult.IsFailure)
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    slotAssignmentResult.Errors.ToList());
+            }
+
+            var updateStatusResult =
+    await _onboardingCaseService.MarkActivatedAsync(
+        request.OnboardingCaseId,
+        activatedByAdminId,
+        ct);
+
             if (updateStatusResult.IsFailure)
-                return Result<MemberLedgerResponseDto>.Fail(updateStatusResult.Errors.ToList());
+            {
+                return Result<MemberLedgerResponseDto>.Fail(
+                    updateStatusResult.Errors.ToList());
+            }
+
+            linkedRequest.RequestStatus = CircleRequestStatus.Fulfilled;
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            var responseDto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);
+            var responseDto =
+                _mapper.Map<MemberLedgerResponseDto>(
+                    memberLedger);
+
             return (Result<MemberLedgerResponseDto>)responseDto;
         }
 
@@ -71,6 +274,62 @@ namespace MonyLoop.Application.Services.OnboardingMemberLedger
 
             var responseDto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);
             return (Result<MemberLedgerResponseDto>)responseDto;
+        }
+
+        public async Task<Result<List<MemberLedgerResponseDto>>> GetAllAsync(
+    CancellationToken ct = default)
+        {
+            var memberLedgers =
+                await _unitOfWork.MemberLedgers.GetAllWithDetailsAsync(ct);
+
+            var responseDtos = memberLedgers
+                .Select(MapLedgerWithDetails)
+                .ToList();
+
+            return (Result<List<MemberLedgerResponseDto>>)responseDtos;
+        }
+
+        public async Task<Result<List<MemberLedgerResponseDto>>> GetByOrganizerIdAsync(Guid organizerId,CancellationToken ct = default)
+        {
+            if (organizerId == Guid.Empty)
+            {
+                return Result<List<MemberLedgerResponseDto>>.Fail(
+                    Error.Validation(
+                        "MemberLedger.InvalidOrganizerId",
+                        "The authenticated Organizer ID is invalid."));
+            }
+
+            var memberLedgers =
+                await _unitOfWork.MemberLedgers.GetByOrganizerIdAsync(
+                    organizerId,
+                    ct);
+
+            var responseDtos = memberLedgers
+                .Select(MapLedgerWithDetails)
+                .ToList();
+
+            return (Result<List<MemberLedgerResponseDto>>)responseDtos;
+        }
+
+        private MemberLedgerResponseDto MapLedgerWithDetails(MemberLedger memberLedger)
+        {
+            var dto = _mapper.Map<MemberLedgerResponseDto>(memberLedger);
+
+            dto.MemberName = memberLedger.User == null
+                ? string.Empty
+                : $"{memberLedger.User.FirstName} {memberLedger.User.LastName}".Trim();
+
+            dto.CircleTitle =
+                memberLedger.CircleSlot?
+                    .Circle?
+                    .CircleRequest?
+                    .CircleTitle
+                ?? string.Empty;
+
+            dto.SlotNumber =
+                memberLedger.CircleSlot?.SlotNumber;
+
+            return dto;
         }
     }
 }

@@ -27,6 +27,8 @@ namespace MonyLoop.Application.DTOs
     {
         public Guid MembershipApplicationId { get; set; }
         public Guid ListingId { get; set; }
+        public Guid CircleId { get; set; }
+        public string? Title { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;

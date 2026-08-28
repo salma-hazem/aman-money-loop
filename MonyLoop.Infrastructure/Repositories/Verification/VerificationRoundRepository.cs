@@ -39,17 +39,45 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
             await _context.VerificationRounds.AddAsync(entity, cancellationToken);
         }
 
-        public async Task UpdateByIdAsync(Guid verificationRoundId, VerificationRound entity, CancellationToken cancellationToken = default)
+        public async Task UpdateByIdAsync(Guid verificationRoundId, VerificationRound updatedEntity, CancellationToken cancellationToken = default)
         {
-            var existingEntity = await GetVerificationRoundByIdAsync(verificationRoundId, cancellationToken);
-            if (existingEntity == null)
+            // 1. Fetch the round along with its child criteria collection
+            var existingEntity = await _context.VerificationRounds
+                .Include(r => r.VerificationCriteria)
+                .FirstOrDefaultAsync(r => r.VerificationRoundId == verificationRoundId, cancellationToken);
+
+            if (existingEntity == null) return;
+
+            // 2. Update scalar properties on the VerificationRound itself
+            _context.Entry(existingEntity).CurrentValues.SetValues(updatedEntity);
+
+            // 3. Delete criteria that were removed in the update
+            foreach (var existingCriterion in existingEntity.VerificationCriteria.ToList())
             {
-                return;
+                if (!updatedEntity.VerificationCriteria.Any(c =>
+                    c.VerificationCriterionId == existingCriterion.VerificationCriterionId))
+                {
+                    _context.VerificationCriteria.Remove(existingCriterion);
+                }
             }
 
-            _context.Entry(existingEntity).CurrentValues.SetValues(entity);
+            // 4. Update existing criteria or add new ones
+            foreach (var newCriterion in updatedEntity.VerificationCriteria)
+            {
+                var existingCriterion = existingEntity.VerificationCriteria
+                    .FirstOrDefault(c =>
+                        c.VerificationCriterionId == newCriterion.VerificationCriterionId &&
+                        c.VerificationCriterionId != Guid.Empty);
 
-            _context.VerificationRounds.Update(existingEntity);
+                if (existingCriterion != null)
+                {
+                    _context.Entry(existingCriterion).CurrentValues.SetValues(newCriterion);
+                }
+                else
+                {
+                    existingEntity.VerificationCriteria.Add(newCriterion);
+                }
+            }
         }
 
         public async Task DeleteByIdAsync(Guid VerificationRoundId, CancellationToken cancellationToken = default)

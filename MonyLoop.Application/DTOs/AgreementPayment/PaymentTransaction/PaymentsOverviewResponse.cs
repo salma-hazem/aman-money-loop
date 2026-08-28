@@ -6,7 +6,6 @@
 
         public decimal? NextContributionAmount { get; set; }
 
-        public DateOnly? NextContributionDueDate { get; set; }
 
         public decimal TotalPaid { get; set; }
 

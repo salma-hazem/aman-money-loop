@@ -1,0 +1,10 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.OtpEmailModel
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "رمز التحقق";
+    ViewBag.IsRtl = true;
+}
+<h2>مرحبًا @Model.UserName،</h2>
+<p>استخدم الرمز التالي للتحقق من حسابك:</p>
+<div class="otp" dir="ltr">@Model.Code</div>
+<p class="warning">تنتهي صلاحية هذا الرمز خلال @Model.ExpiryMinutes دقيقة. لا تشاركه مع أي شخص.</p>

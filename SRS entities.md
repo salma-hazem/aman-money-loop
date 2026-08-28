@@ -4,7 +4,7 @@ This file reflects the current Domain model plus the agreed corrections needed f
 
 ## Module 1 - User and Account Management
 
-Implementation note: Module 1 authentication is on hold until the team decides the ASP.NET Core Identity setup. The current code does not contain custom User/Role/UserRole entities. Business entities keep user-related Guid FK fields for now, and user navigation properties are commented until the Identity user type is finalized.
+Implementation note: Module 1 uses ASP.NET Core Identity with `Guid` user and role keys. `ApplicationUser` extends `IdentityUser<Guid>`, and Identity owns password hashing, normalized email/user names, lockout data, security stamps, role mapping, claims, logins, and tokens.
 
 ### ApplicationUser
 
@@ -15,38 +15,53 @@ Implementation note: Module 1 authentication is on hold until the team decides t
 - PasswordHash: string
 - PhoneNumber: string
 - NationalId: string?
+- ProfilePictureUrl: string?
+- PendingEmail: string?
 - MustChangePassword: bool
-- CreatedByAdminId: Guid?
+- RegisteredByAdminId: Guid?
 - CreatedAt: DateTime
+- UpdatedAt: DateTime?
+- IsActive: bool
 
-Note: Intended to be implemented later as a customized ASP.NET Core Identity user, not a fully custom authentication entity.
+Note: `PendingEmail` supports OTP verification before an email change is committed. Public members choose their password. Admin-created Organizer/Admin accounts receive a temporary password and must replace it on first login.
 
 ### ApplicationRole
 
 - RoleId: Guid
 - RoleName: string
 
-Note: Intended to use ASP.NET Core Identity roles/user-role mapping.
+Canonical roles are `Admin`, `Organizer`, and `Member`.
 
-### UserRole
+### Identity UserRole
 
-- UserRoleId: Guid
 - UserId: Guid
 - RoleId: Guid
 
 ### OtpToken
 
 - OtpTokenId: Guid
-- UserId: Guid?
-- Email: string
+- UserId: Guid
 - Code: string
-- Purpose: string
+- Purpose: OTPPurpose
 - IsUsed: bool
+- AttemptsCount: int
 - ExpiresAt: DateTime
 - CreatedAt: DateTime
-- UsedAt: DateTime?
 
-Note: OTP may be custom because the SRS needs email OTP confirmation and password reset flows. Final implementation can either use Identity tokens directly or keep a separate OtpToken table.
+Note: The six-digit OTP is stored with its purpose, expiry, attempts, and single-use state. Redis limits OTP requests to one per minute. Supported purposes are registration confirmation, password reset, and email change.
+
+### RefreshToken
+
+- RefreshTokenId: Guid
+- UserId: Guid
+- Token: string
+- ExpiresAt: DateTime
+- CreatedAt: DateTime
+- IsRevoked: bool
+- RevokedAt: DateTime?
+- ReplacedByToken: string?
+
+Note: Refresh tokens rotate when used and are revoked after password reset or password change.
 
 ## Module 2 - Circle Request and Configuration Management
 
@@ -69,6 +84,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - ReviewedAt: DateTime?
 - DecisionReason: string?
 
+Lifecycle note: new requests store organizer-entered terms. Replacement requests store `ExistingCircleId` and `VacantSlotNumber`; their title, amount, duration, and one-slot count are derived from the existing circle. Requests are retained and cancelled rather than physically deleted.
+
 ### Circle
 
 - CircleId: Guid
@@ -78,6 +95,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - Amount: decimal
 - Duration: int
 - Status: CircleStatus
+
+Lifecycle note: approval creates the circle as `Open`; publication changes it to `InRecruitment`; filling its final slot changes it to `Filled`; cancellation of its original published request changes it to `Closed`.
 
 ### MarketplaceListing
 
@@ -94,6 +113,8 @@ Note: OTP may be custom because the SRS needs email OTP confirmation and passwor
 - Status: CircleSlotStatus
 - VacatedAt: DateTime?
 - AssignedAt: DateTime?
+
+Lifecycle note: a new slot starts `Vacant`. Assignment sets `MemberLedgerId`, `Status = Assigned`, and `AssignedAt`. Vacancy clears `MemberLedgerId` and `AssignedAt`, sets `Status = Vacant`, and records `VacatedAt`. `Locked` is reserved but unused until the SRS defines it.
 
 ### AuditLog
 
@@ -262,14 +283,15 @@ Implementation note: these values are represented as C# enums in Domain. EF Core
 - ModificationRequested
 - Approved
 - Rejected
+- Published
 - Cancelled
-- Fulfilled
 
 ### CircleStatus
 
 - Open
 - InRecruitment
 - Filled
+- Closed
 
 ### MarketplaceListingStatus
 

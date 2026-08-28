@@ -9,6 +9,7 @@ namespace MonyLoop.Domain.Entities.Onboarding___Member_Ledger
         public Guid OnboardingCaseId { get; set; }
         public Guid MembershipAgreementId { get; set; }
         public Guid OrganizerId { get; set; }
+        public Guid UserId { get; set; }
         public OnboardingCaseStatus FinalStatus { get; set; } = OnboardingCaseStatus.Pending;
         public DateTime CreatedAt { get; set; }
 
@@ -16,5 +17,6 @@ namespace MonyLoop.Domain.Entities.Onboarding___Member_Ledger
         public ApplicationUser? Organizer { get; set; }
         public ICollection<Document> Documents { get; set; } = new List<Document>();
         public MemberLedger? MemberLedger { get; set; }
+        public ApplicationUser? User { get; set; }
     }
 }

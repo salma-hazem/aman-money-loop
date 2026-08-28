@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MonyLoop.Application.DTOs.OnboardingMemberLedger;
 using MonyLoop.Application.ServicesAbstractions.OnboardingMemberLedger;
 
 namespace MonyLoop.API.Controllers.OnboardingMemberLedger
 {
+    [Authorize]
     public class DocumentRequirementsController : ApiBaseController
     {
         private readonly IDocumentRequirementService _documentRequirementService;
