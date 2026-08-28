@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MonyLoop.Application.ServicesAbstractions;
 using MonyLoop.Infrastructure.Data;
+using MonyLoop.Infrastructure.DataSeeding;
 
 namespace MonyLoop.API.Extentions
 {
@@ -23,6 +24,9 @@ namespace MonyLoop.API.Extentions
             await using var scope = app.Services.CreateAsyncScope();
             var dataInitializer = scope.ServiceProvider.GetRequiredService<IDataInitializer>();
             await dataInitializer.InitializeAsync();
+
+            var demoDataInitializer = scope.ServiceProvider.GetRequiredService<DemoDataInitializer>();
+            await demoDataInitializer.InitializeAsync();
 
             return app;
         }

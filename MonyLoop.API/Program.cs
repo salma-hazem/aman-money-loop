@@ -159,6 +159,9 @@ namespace MonyLoop.API
                 .AddOptions<SeedAdminOptions>()
                 .Bind(builder.Configuration.GetSection(SeedAdminOptions.SectionName));
             builder.Services
+                .AddOptions<DemoDataOptions>()
+                .Bind(builder.Configuration.GetSection(DemoDataOptions.SectionName));
+            builder.Services
                 .AddOptions<SmtpOptions>()
                 .Bind(builder.Configuration.GetSection(SmtpOptions.SectionName))
                 .ValidateDataAnnotations();
@@ -215,6 +218,7 @@ namespace MonyLoop.API
 
             //===== Data Seeding =====
             builder.Services.AddScoped<IDataInitializer, IdentityDataInitializer>();
+            builder.Services.AddScoped<DemoDataInitializer>();
 
 
 
