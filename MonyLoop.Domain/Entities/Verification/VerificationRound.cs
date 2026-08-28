@@ -5,7 +5,6 @@ namespace MonyLoop.Domain.Entities.Verification
 {
     public class VerificationRound
     {
-        public ICollection<VerificationCriterion> Criteria { get; set; } = new List<VerificationCriterion>();
         public Guid VerificationRoundId { get; set; }
         public Guid CircleId { get; set; }
         public Guid ReviewedByUserId { get; set; }

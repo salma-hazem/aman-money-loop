@@ -43,7 +43,7 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
         {
             // 1. Fetch the round along with its child criteria collection
             var existingEntity = await _context.VerificationRounds
-                .Include(r => r.Criteria)
+                .Include(r => r.VerificationCriteria)
                 .FirstOrDefaultAsync(r => r.VerificationRoundId == verificationRoundId, cancellationToken);
 
             if (existingEntity == null) return;
@@ -52,19 +52,22 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
             _context.Entry(existingEntity).CurrentValues.SetValues(updatedEntity);
 
             // 3. Delete criteria that were removed in the update
-            foreach (var existingCriterion in existingEntity.Criteria.ToList())
+            foreach (var existingCriterion in existingEntity.VerificationCriteria.ToList())
             {
-                if (!updatedEntity.Criteria.Any(c => c.VerificationCriterionId == existingCriterion.VerificationCriterionId))
+                if (!updatedEntity.VerificationCriteria.Any(c =>
+                    c.VerificationCriterionId == existingCriterion.VerificationCriterionId))
                 {
                     _context.VerificationCriteria.Remove(existingCriterion);
                 }
             }
 
             // 4. Update existing criteria or add new ones
-            foreach (var newCriterion in updatedEntity.Criteria)
+            foreach (var newCriterion in updatedEntity.VerificationCriteria)
             {
-                var existingCriterion = existingEntity.Criteria
-                    .FirstOrDefault(c => c.VerificationCriterionId == newCriterion.VerificationCriterionId && c.VerificationCriterionId != Guid.Empty);
+                var existingCriterion = existingEntity.VerificationCriteria
+                    .FirstOrDefault(c =>
+                        c.VerificationCriterionId == newCriterion.VerificationCriterionId &&
+                        c.VerificationCriterionId != Guid.Empty);
 
                 if (existingCriterion != null)
                 {
@@ -72,7 +75,7 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
                 }
                 else
                 {
-                    existingEntity.Criteria.Add(newCriterion);
+                    existingEntity.VerificationCriteria.Add(newCriterion);
                 }
             }
         }

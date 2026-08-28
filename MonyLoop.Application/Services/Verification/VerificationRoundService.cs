@@ -91,12 +91,9 @@ namespace MonyLoop.Application.Services.Verification
 
             existingRound.RoundName = dto.RoundName;
             existingRound.Format = dto.Format;
-            if (dto.ReviewedByUserId != null)
-            {
-                existingRound.ReviewedByUserId = dto.ReviewedByUserId;
-            }
+            existingRound.ReviewedByUserId = dto.ReviewedByUserId;
 
-            existingRound.Criteria = dto.Criteria.Select(c => new VerificationCriterion
+            existingRound.VerificationCriteria = dto.Criteria.Select(c => new VerificationCriterion
             {
                 VerificationCriterionId = c.VerificationCriterionId ?? Guid.NewGuid(),
                 VerificationRoundId = verificationRoundId,

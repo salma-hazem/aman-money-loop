@@ -65,7 +65,12 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
         {
             var query = _dbcontext.OnboardingCases.Where(o => o.OrganizerId == organizerId);
             var totalCount = await query.CountAsync(ct);
-            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+            var items = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .ThenBy(o => o.OnboardingCaseId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
             return (items, totalCount);
         }
 
@@ -82,7 +87,12 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
         {
             var query = _dbcontext.OnboardingCases.Where(o => o.FinalStatus == status);
             var totalCount = await query.CountAsync(ct);
-            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+            var items = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .ThenBy(o => o.OnboardingCaseId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
             return (items, totalCount);
         }
 

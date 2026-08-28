@@ -91,6 +91,8 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
             var totalCount = await query.CountAsync(ct);
 
             var items = await query
+                .OrderByDescending(x => x.UploadedAt)
+                .ThenBy(x => x.DocumentId)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(ct);
@@ -121,6 +123,8 @@ namespace MonyLoop.Infrastructure.Repositories.OnboardingMemberLedger
             var totalCount = await query.CountAsync(ct);
 
             var items = await query
+                .OrderByDescending(x => x.UploadedAt)
+                .ThenBy(x => x.DocumentId)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(ct);
