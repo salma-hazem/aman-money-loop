@@ -46,6 +46,8 @@ using QuestPDF.Infrastructure;
 using StackExchange.Redis;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 namespace MonyLoop.API
 {
@@ -59,6 +61,15 @@ namespace MonyLoop.API
 
             // ===== Controllers & API Behavior =====
             builder.Services.AddControllers();
+            builder.Services.AddLocalization();
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                var supportedCultures = new[] { new CultureInfo("en-EG"), new CultureInfo("ar-EG") };
+                options.DefaultRequestCulture = new RequestCulture("en-EG");
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+                options.ApplyCurrentCultureToResponseHeaders = true;
+            });
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
                 options.InvalidModelStateResponseFactory = ApiResponseFactory.GenerateApiValidationResponse;
@@ -279,6 +290,7 @@ namespace MonyLoop.API
             await app.SeedDatabaseAsync();
 
             // ===== HTTP Request Pipeline =====
+            app.UseRequestLocalization();
             app.UseMiddleware<ExceptionHandlerMiddleware>();
 
             if (app.Environment.IsDevelopment())

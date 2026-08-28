@@ -164,7 +164,20 @@ namespace MonyLoop.Application.Services.AgreementPayment
                 $"{frontendBaseUrl.TrimEnd('/')}/agreement-response" +
                 $"?agreementId={agreement.MembershipAgreementId}" +
                 $"&token={Uri.EscapeDataString(responseToken)}";
-            var emailBody = $"""
+
+            var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+            var emailBody = isArabic
+                ? $"""
+            <div dir="rtl" style="text-align:right">
+                <p>عزيزي/ عزيزتي {application.Name}،</p>
+                <p>اتفاقية عضويتك في جمعية <strong>{agreement.CircleTitle}</strong> جاهزة للمراجعة.</p>
+                <p>يرجى استخدام الرابط أدناه لمراجعة الاتفاقية والرد عليها:</p>
+                <p><a href="{responseUrl}">مراجعة اتفاقية العضوية</a></p>
+                <p>تنتهي صلاحية هذه الاتفاقية في <strong>{agreement.ExpiryDate:dd MMM yyyy}</strong>.</p>
+                <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+            </div>
+            """
+                : $"""
             <p>Dear {application.Name},</p>
 
             <p>
@@ -192,7 +205,7 @@ namespace MonyLoop.Application.Services.AgreementPayment
             """;
             await _emailSender.SendEmailAsync(
                 application.Email,
-                "Membership Agreement Ready for Review",
+                isArabic ? "اتفاقية العضوية جاهزة للمراجعة" : "Membership Agreement Ready for Review",
                 emailBody);
             return _mapper.Map<MembershipAgreementResponse>(agreement);
         }
@@ -509,9 +522,25 @@ namespace MonyLoop.Application.Services.AgreementPayment
                         agreement.MembershipAgreementId);
                     return;
                 }
-                var subject =
-                    $"Membership Agreement {decision}";
-                var body = $"""
+
+                var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+                var localizedDecision = decision.Equals("accepted", StringComparison.OrdinalIgnoreCase)
+                    ? "مقبولة"
+                    : decision.Equals("declined", StringComparison.OrdinalIgnoreCase) ? "مرفوضة" : decision;
+                var subject = isArabic
+                    ? $"اتفاقية العضوية {localizedDecision}"
+                    : $"Membership Agreement {decision}";
+
+                var body = isArabic
+                    ? $"""
+            <div dir="rtl" style="text-align:right">
+                <p>عزيزي/ عزيزتي {organizer.FirstName}،</p>
+                <p>تم {localizedDecision} اتفاقية عضوية <strong>{agreement.MemberName}</strong> في جمعية <strong>{agreement.CircleTitle}</strong>.</p>
+                <p>رقم الاتفاقية: <span dir="ltr">{agreement.MembershipAgreementId}</span></p>
+                <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+            </div>
+            """
+                    : $"""
             <p>Dear {organizer.FirstName},</p>
 
             <p>

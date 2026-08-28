@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MonyLoop.Application.Common;
+using MonyLoop.API.Localization;
 
 namespace MonyLoop.API.Controllers
 {
@@ -31,7 +32,7 @@ namespace MonyLoop.API.Controllers
         private ActionResult HandleProblem(IReadOnlyList<Error> errors)
         {
             if (errors.Count == 0)
-                return Problem(statusCode: StatusCodes.Status500InternalServerError, title: "An Unexpected Error Ocurred");
+                return Problem(statusCode: StatusCodes.Status500InternalServerError, title: ApiText.Translate("An Unexpected Error Ocurred"));
             if (errors.All(e => e.Type == ErrorType.Validation))
                 return HandleValidationProblem(errors);
 
@@ -44,7 +45,7 @@ namespace MonyLoop.API.Controllers
         {
             return Problem(
                 title: error.Code,
-                detail: error.Description,
+                detail: ApiText.Translate(error.Description),
                 type: error.Type.ToString(),
                 statusCode: MapErrorTypeToStatusCode(error.Type)
                 );
@@ -66,7 +67,7 @@ namespace MonyLoop.API.Controllers
         {
             var modelState = new ModelStateDictionary();
             foreach (var error in errors)
-                modelState.AddModelError(error.Code, error.Description);
+                modelState.AddModelError(error.Code, ApiText.Translate(error.Description));
 
             return ValidationProblem(modelState);
 

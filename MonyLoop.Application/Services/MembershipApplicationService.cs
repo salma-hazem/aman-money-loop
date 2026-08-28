@@ -97,10 +97,19 @@ namespace MonyLoop.Application.Services
 
             await _repository.UpdateAsync(application);
 
+            var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
             await _emailSender.SendEmailAsync(
                 application.Email,
-                "Membership Application Status Update",
-                $"""
+                isArabic ? "تحديث حالة طلب العضوية" : "Membership Application Status Update",
+                isArabic
+                ? $"""
+                <div dir="rtl" style="text-align:right">
+                    <p>عزيزي/ عزيزتي {application.Name}،</p>
+                    <p>تم تحديث حالة طلب عضويتك إلى <strong>القائمة المختصرة</strong>.</p>
+                    <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+                </div>
+                """
+                : $"""
                 <p>Dear {application.Name},</p>
                 <p>
                     Your membership application status has been updated to
@@ -130,10 +139,19 @@ namespace MonyLoop.Application.Services
 
             await _repository.UpdateAsync(application);
 
+            var isArabic = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
             await _emailSender.SendEmailAsync(
                 application.Email,
-                "Membership Application Status Update",
-                $"""
+                isArabic ? "تحديث حالة طلب العضوية" : "Membership Application Status Update",
+                isArabic
+                ? $"""
+                <div dir="rtl" style="text-align:right">
+                    <p>عزيزي/ عزيزتي {application.Name}،</p>
+                    <p>تم تحديث حالة طلب عضويتك إلى <strong>مرفوض</strong>.</p>
+                    <p>مع تحياتنا،<br/>فريق أمان ماني لوب</p>
+                </div>
+                """
+                : $"""
                 <p>Dear {application.Name},</p>
                 <p>
                     Your membership application status has been updated to

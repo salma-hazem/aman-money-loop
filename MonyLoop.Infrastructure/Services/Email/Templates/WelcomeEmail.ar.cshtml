@@ -1,0 +1,14 @@
+@model MonyLoop.Infrastructure.Services.Email.Models.WelcomeEmailModel
+@{
+    Layout = "Shared/_EmailLayout.cshtml";
+    ViewBag.Title = "مرحبًا بك";
+    ViewBag.IsRtl = true;
+}
+<h2>مرحبًا @Model.UserName،</h2>
+<p>تم إنشاء حسابك في أمان ماني لوب بنجاح.</p>
+<div class="info-box">
+    <p><strong>البريد الإلكتروني</strong><br /><span dir="ltr">@Model.To</span></p>
+    <p><strong>كلمة المرور المؤقتة</strong><br /><span dir="ltr">@Model.TemporaryPassword</span></p>
+</div>
+<div class="button-container"><a class="button" href="@Model.LoginUrl">تسجيل الدخول</a></div>
+<p class="warning">يرجى تغيير كلمة المرور فور تسجيل دخولك لأول مرة.</p>

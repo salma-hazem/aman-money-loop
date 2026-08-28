@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace MonyLoop.Infrastructure.Services.Email
 {
@@ -38,13 +39,14 @@ namespace MonyLoop.Infrastructure.Services.Email
                 LoginUrl = loginUrl
             };
 
+            var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
             var html = await _renderer.RenderAsync(
-                "WelcomeEmail",
+                isArabic ? "WelcomeEmail.ar" : "WelcomeEmail",
                 model);
 
             await SendEmailAsync(
                 toEmail,
-                "Welcome to MonyLoop",
+                isArabic ? "مرحبًا بك في أمان ماني لوب" : "Welcome to MonyLoop",
                 html,
                 ct);
         }
@@ -63,13 +65,14 @@ namespace MonyLoop.Infrastructure.Services.Email
                 ExpiryMinutes = expiryMinutes
             };
 
+            var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
             var html = await _renderer.RenderAsync(
-                "OtpEmail",
+                isArabic ? "OtpEmail.ar" : "OtpEmail",
                 model);
 
             await SendEmailAsync(
                 toEmail,
-                "Your Verification Code",
+                isArabic ? "رمز التحقق الخاص بك" : "Your Verification Code",
                 html,
                 ct);
         }

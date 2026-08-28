@@ -54,7 +54,11 @@ namespace MonyLoop.Application.Services.Verification
                 ?? throw new KeyNotFoundException($"Verification round with ID {dto.VerificationRoundId} not found.");
 
             // 4. SRS Rule: The selected round must belong to the applicant’s circle
-            if (application.MarketplaceListing is null)
+            var applicationCircleId = application.MarketplaceListing?.CircleId
+                ?? throw new InvalidOperationException(
+                    "The membership application's circle could not be determined.");
+
+            if (round.CircleId != applicationCircleId)
             {
                 throw new InvalidOperationException(
                     "The applicant's marketplace listing could not be found.");
@@ -73,9 +77,9 @@ namespace MonyLoop.Application.Services.Verification
                 throw new ArgumentException("The scheduled date and time must be in the future.");
             }
 
-            // 6. SRS Rule: Format specifics
-            if (round.Format == VerificationFormat.InPerson &&
-                string.IsNullOrWhiteSpace(dto.LocationLink))
+            // 6. SRS Rule: Format specifics (Location for In-Person, Video Link for Video)
+            var formatStr = round.Format.ToString();
+            if (formatStr.Contains("InPerson", StringComparison.OrdinalIgnoreCase) || formatStr.Contains("In-Person", StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException(
                     "A location must be supplied for in-person verification rounds.");
@@ -123,7 +127,9 @@ namespace MonyLoop.Application.Services.Verification
                 string applicantEmail = application.Email ?? "no-reply@monyloop.com";
 
                 string icsContent = GenerateIcsContent(schedule, round);
-                string locationText = !string.IsNullOrWhiteSpace(schedule.LocationLink) ? schedule.LocationLink : schedule.VideoLink;
+                var locationText = !string.IsNullOrWhiteSpace(schedule.LocationLink)
+                    ? schedule.LocationLink
+                    : schedule.VideoLink ?? string.Empty;
 
                 string htmlBody = $@"
                     <h3>Your Verification Interview is Scheduled</h3>
