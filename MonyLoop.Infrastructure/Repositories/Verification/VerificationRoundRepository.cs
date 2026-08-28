@@ -44,7 +44,7 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
             // 1. Fetch the round along with its child criteria collection
             var existingEntity = await _context.VerificationRounds
                 .Include(r => r.Criteria)
-                .FirstOrDefaultAsync(r => r.Id == verificationRoundId, cancellationToken);
+                .FirstOrDefaultAsync(r => r.VerificationRoundId == verificationRoundId, cancellationToken);
 
             if (existingEntity == null) return;
 
@@ -54,7 +54,7 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
             // 3. Delete criteria that were removed in the update
             foreach (var existingCriterion in existingEntity.Criteria.ToList())
             {
-                if (!updatedEntity.Criteria.Any(c => c.Id == existingCriterion.Id))
+                if (!updatedEntity.Criteria.Any(c => c.VerificationCriterionId == existingCriterion.VerificationCriterionId))
                 {
                     _context.VerificationCriteria.Remove(existingCriterion);
                 }
@@ -64,7 +64,7 @@ namespace MonyLoop.Infrastructure.Repositories.Verification
             foreach (var newCriterion in updatedEntity.Criteria)
             {
                 var existingCriterion = existingEntity.Criteria
-                    .FirstOrDefault(c => c.Id == newCriterion.Id && c.Id != Guid.Empty);
+                    .FirstOrDefault(c => c.VerificationCriterionId == newCriterion.VerificationCriterionId && c.VerificationCriterionId != Guid.Empty);
 
                 if (existingCriterion != null)
                 {

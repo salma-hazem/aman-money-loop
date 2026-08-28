@@ -44,6 +44,8 @@ namespace MonyLoop.Application.DTOs.Verification
         public string RoundName { get; set; } = string.Empty;
         public VerificationFormat Format { get; set; }
         public List<UpdateVerificationCriterionDto> Criteria { get; set; } = new();
+
+        public Guid ReviewedByUserId { get; set; }
     }
 
     public class UpdateVerificationCriterionDto

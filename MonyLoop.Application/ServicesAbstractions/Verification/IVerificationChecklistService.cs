@@ -18,5 +18,6 @@ namespace MonyLoop.Application.ServicesAbstractions.Verification
 
         // Fetches consolidated result overview for organizer final selection decision
         Task<VerificationConsolidatedResultDto?> GetConsolidatedResultAsync(Guid verificationScheduleId, CancellationToken ct = default);
+        Task<ApplicationVerificationSummaryDto?> GetApplicationConsolidatedSummaryAsync(Guid applicationId, CancellationToken ct = default);
     }
 }
