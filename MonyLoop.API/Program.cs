@@ -81,7 +81,10 @@ namespace MonyLoop.API
                 options.AddPolicy("AngularDev", policy =>
                 {
                     policy
-                        .WithOrigins("http://localhost:4200")
+                        .WithOrigins(
+                            "http://localhost:4200",
+                            "https://aman-money-loop-frontend.vercel.app"
+                        )
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
