@@ -293,11 +293,11 @@ namespace MonyLoop.API
             app.UseRequestLocalization();
             app.UseMiddleware<ExceptionHandlerMiddleware>();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            //if (app.Environment.IsDevelopment())
+            //{
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            //}
 
             app.UseCors("AngularDev");
             app.UseHttpsRedirection();
